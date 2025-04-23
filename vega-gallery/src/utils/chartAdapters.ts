@@ -1,7 +1,7 @@
-import { MarkType, ChartEncoding } from '../types/vega';
+import { MarkType, EncodingField, EncodingChannel } from '../types/vega';
 import { DatasetMetadata } from '../types/dataset';
 import { detectDataTypes } from './dataUtils';
-import type { ChartEncoding as VegaChartEncoding, EncodingField } from '../types/vega';
+import { TopLevelSpec } from 'vega-lite';
 
 interface EncodingConfig {
   x?: { field: string; type: string };
@@ -89,6 +89,14 @@ export const determineChartEncodings = (
         color: categoricalFields.length > 1 ? 
           { field: categoricalFields[1], type: 'nominal' } : undefined
       };
+      
+    case 'violin':
+      return {
+        x: { field: categoricalFields[0], type: 'nominal' },
+        y: { field: quantitativeFields[0], type: 'quantitative' },
+        color: categoricalFields.length > 1 ? 
+          { field: categoricalFields[1], type: 'nominal' } : undefined
+      };
 
     case 'area':
       return {
@@ -117,14 +125,10 @@ export const determineChartEncodings = (
         size: { field: fields.find(([key]) => key.includes('size') || key.includes('value'))?.[0] || quantitativeFields[0], type: 'quantitative' }
       };
 
-    // Add more chart types as needed...
-
-    case 'your-new-chart-type':
+    case 'treemap':
       return {
-        x: quantitativeFields[0] ? 
+        size: quantitativeFields[0] ? 
           { field: quantitativeFields[0], type: 'quantitative' } : undefined,
-        y: quantitativeFields[1] ? 
-          { field: quantitativeFields[1], type: 'quantitative' } : undefined,
         color: categoricalFields.length ? 
           { field: categoricalFields[0], type: 'nominal' } : undefined
       };
@@ -249,7 +253,7 @@ const getBestEncodingForField = (
         encoding: {
           field,
           type: 'temporal',
-          scale: { type: 'time' }
+          scale: {}
         }
       });
     } else if (analysis.isNumeric) {
@@ -353,27 +357,48 @@ const AVAILABLE_ENCODINGS_BY_MARK = {
   },
   arc: {
     required: ['theta'],
-    optional: ['radius', 'color', 'opacity', 'tooltip']
+    optional: ['radius', 'color', 'opacity', 'tooltip', 'x', 'y']
+  },
+  treemap: {
+    required: ['size', 'color'],
+    optional: ['tooltip', 'opacity', 'text']
+  },
+  wordcloud: {
+    required: ['text', 'size'],
+    optional: ['color', 'angle', 'opacity', 'tooltip']
+  },
+  'parallel-coordinates': {
+    required: ['detail'],
+    optional: ['color', 'opacity', 'tooltip']
+  },
+  boxplot: {
+    required: ['x', 'y'],
+    optional: ['color', 'opacity', 'tooltip']
+  },
+  violin: {
+    required: ['x', 'y'],
+    optional: ['color', 'opacity', 'tooltip', 'size']
   }
 } as const;
 
-export const generateRandomEncoding = (
-  markType: string, 
-  fields: string[], 
-  dataTypes: Record<string, string>
-): ChartEncoding => {
+export const generateRandomEncoding = (fields: [string, string][], chartType: MarkType): ChartEncoding => {
   const encoding: ChartEncoding = {};
   const usedFields = new Set<string>();
   
-  const availableEncodings = AVAILABLE_ENCODINGS_BY_MARK[markType as keyof typeof AVAILABLE_ENCODINGS_BY_MARK] || {
+  const availableEncodings = AVAILABLE_ENCODINGS_BY_MARK[chartType as keyof typeof AVAILABLE_ENCODINGS_BY_MARK] || {
     required: [],
     optional: ['x', 'y', 'color']
   };
 
   // Helper to get appropriate fields for encoding type
   const getCompatibleFields = (encodingChannel: string) => {
+    // For arc charts, prevent using 'size' encoding
+    if (chartType === 'arc' && encodingChannel === 'size') {
+      return [];
+    }
+    
     return fields.filter(field => {
-      const type = dataTypes[field];
+      const type = field[1];
       switch (encodingChannel) {
         case 'x':
         case 'y':
@@ -392,7 +417,7 @@ export const generateRandomEncoding = (
         default:
           return true;
       }
-    }).filter(field => !usedFields.has(field));
+    }).filter(field => !usedFields.has(field[0]));
   };
 
   // First assign required encodings
@@ -401,10 +426,10 @@ export const generateRandomEncoding = (
     if (compatibleFields.length > 0) {
       const field = compatibleFields[Math.floor(Math.random() * compatibleFields.length)];
       encoding[channel] = {
-        field,
-        type: getAppropriateType(channel, field, dataTypes[field])
+        field: field[0],
+        type: getAppropriateType(channel, field[0], field[1])
       };
-      usedFields.add(field);
+      usedFields.add(field[0]);
     }
   }
 
@@ -418,21 +443,29 @@ export const generateRandomEncoding = (
     if (compatibleFields.length > 0) {
       const field = compatibleFields[Math.floor(Math.random() * compatibleFields.length)];
       encoding[channel] = {
-        field,
-        type: getAppropriateType(channel, field, dataTypes[field])
+        field: field[0],
+        type: getAppropriateType(channel, field[0], field[1])
       };
-      usedFields.add(field);
+      usedFields.add(field[0]);
     }
   }
 
   // Always add tooltip with remaining unused fields
-  const unusedFields = fields.filter(f => !usedFields.has(f));
+  const unusedFields = fields.filter(f => !usedFields.has(f[0]));
   if (unusedFields.length > 0) {
     encoding.tooltip = unusedFields.slice(0, 3).map(field => ({
-      field,
-      type: getAppropriateType('tooltip', field, dataTypes[field])
+      field: field[0],
+      type: getAppropriateType('tooltip', field[0], field[1])
     }));
   }
+
+  // Fix time scale type assignment
+  const timeScales = {
+    linear: 'linear',
+    log: 'log',
+    sqrt: 'sqrt',
+    pow: 'pow'
+  } as const;
 
   return encoding;
 };
@@ -462,19 +495,93 @@ const getAppropriateType = (channel: string, field: string, dataType: string): s
 // Helper function for random choice
 const randomChoice = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
-// Add TypeScript interface for better type safety
+// Define ChartEncoding interface correctly to match usage in the file
 export interface ChartEncoding {
-  [key: string]: {
-    field: string;
-    type: string;
-    scale?: {
-      zero?: boolean;
-      range?: number[];
-    };
-    format?: string;
-  } | Array<{
-    field: string;
-    type: string;
-    format?: string;
-  }>;
-} 
+  [key: string]: EncodingField | EncodingField[] | undefined;
+}
+
+/**
+ * Generates a proper parallel coordinates chart specification.
+ * Parallel coordinates are implemented using a line mark with special transformations
+ * rather than a native mark type in Vega-Lite.
+ * 
+ * Note: This requires special handling in the renderer to ensure the 'filled' property
+ * is properly set to false. The mark type must be 'line' for parallel coordinates to render correctly.
+ * 
+ * @param data The dataset to visualize
+ * @param dimensions The data dimensions to include in the parallel coordinates
+ * @param detailField Field to use for distinguishing individual lines
+ * @param colorField Optional field to use for coloring the lines
+ * @param opacityField Optional field to use for varying line opacity
+ * @returns A complete TopLevelSpec for a parallel coordinates chart
+ */
+export const createParallelCoordinatesSpec = (
+  data: any[],
+  dimensions: string[],
+  detailField: string,
+  colorField?: string,
+  opacityField?: string
+): TopLevelSpec => {
+  // Default to a few dimensions if none are provided
+  const actualDimensions = dimensions.length > 0 ? dimensions : ['dim1', 'dim2', 'dim3'];
+  
+  // Ensure we have an ID field for detail
+  const actualDetailField = data[0]?.[detailField] !== undefined ? detailField : 'id';
+  
+  // Create the basic spec
+  const spec: TopLevelSpec = {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    width: 500,
+    height: 300,
+    data: { values: data },
+    transform: [
+      { fold: actualDimensions }
+    ],
+    // IMPORTANT: Always use 'line' type directly, not 'parallel-coordinates'
+    mark: {
+      type: 'line',
+      opacity: 0.5
+    },
+    encoding: {
+      x: {
+        field: 'key',
+        type: 'nominal',
+        sort: actualDimensions,
+        axis: {
+          labelAngle: 0,
+          title: null
+        }
+      },
+      y: {
+        field: 'value',
+        type: 'quantitative',
+        scale: { zero: false, nice: true },
+        axis: { title: null }
+      },
+      color: colorField && data[0]?.[colorField] !== undefined ? 
+        { field: colorField, type: 'nominal' } : 
+        { value: 'steelblue' },
+      opacity: opacityField && data[0]?.[opacityField] !== undefined ? 
+        { field: opacityField, type: 'quantitative' } : 
+        undefined,
+      detail: { field: actualDetailField, type: 'nominal' },
+      tooltip: [
+        { field: actualDetailField, type: 'nominal' },
+        { field: 'key', type: 'nominal' },
+        { field: 'value', type: 'quantitative' }
+      ]
+    },
+    resolve: {
+      scale: {
+        y: 'independent'
+      }
+    }
+  };
+
+  // Ensure mark type is always 'line'
+  if (typeof spec.mark === 'object') {
+    spec.mark.type = 'line';
+  }
+
+  return spec;
+}; 

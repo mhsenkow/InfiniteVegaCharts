@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { DatasetMetadata } from '../../types/dataset';
-import { getAllDatasets, deleteDataset } from '../../utils/indexedDB';
+import { getAllDatasets, deleteDataset, storeDataset } from '../../utils/indexedDB';
 import { DatasetSection } from '../Editor/DatasetSection';
 import { DataTransformationPanel } from './DataTransformationPanel';
 import { LoadingState } from '../common/LoadingState';
 import TableViewIcon from '@mui/icons-material/TableView';
 import GridViewIcon from '@mui/icons-material/GridView';
+import ImageIcon from '@mui/icons-material/Image';
+import { validateDataset } from '../../utils/dataUtils';
+import { ImageDataExtractor } from './ImageDataExtractor';
 
 const Container = styled.div`
   padding: 24px;
@@ -31,11 +34,19 @@ const DatasetGrid = styled.div`
   margin-top: 24px;
 `;
 
-const DatasetCard = styled.div`
-  background: white;
+const DatasetCard = styled.button<{ $active: boolean }>`
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
   border-radius: 8px;
-  padding: 16px;
-  border: 1px solid ${props => props.theme.colors.border};
+  background: ${props => props.$active ? `${props.theme.colors.primary}10` : props.theme.colors.surface};
+  text-align: left;
+  cursor: pointer;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
   
   &:hover {
     border-color: ${props => props.theme.colors.primary};
@@ -64,6 +75,9 @@ const Tab = styled.button<{ $active: boolean }>`
   border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
   border-radius: 6px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   
   &:hover {
     border-color: ${props => props.theme.colors.primary};
@@ -114,12 +128,24 @@ const DeleteButton = styled.button`
   }
 `;
 
+const ErrorMessage = styled.div`
+  color: #dc3545;
+  background-color: #f8d7da;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
 export const DataManagement = () => {
   const [datasets, setDatasets] = useState<DatasetMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDataset, setSelectedDataset] = useState<DatasetMetadata | null>(null);
-  const [activeTab, setActiveTab] = useState<'datasets' | 'transform'>('datasets');
+  const [activeTab, setActiveTab] = useState<'datasets' | 'transform' | 'image'>('datasets');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadDatasets();
@@ -128,10 +154,13 @@ export const DataManagement = () => {
   const loadDatasets = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await getAllDatasets();
       setDatasets(data);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load datasets';
       console.error('Failed to load datasets:', error);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -139,16 +168,39 @@ export const DataManagement = () => {
 
   const handleDeleteDataset = async (id: string) => {
     try {
+      setError(null);
       await deleteDataset(id);
       await loadDatasets();
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete dataset';
       console.error('Failed to delete dataset:', error);
+      setError(errorMessage);
     }
   };
 
   const handleDatasetSelect = (dataset: DatasetMetadata) => {
+    // Validate dataset before selecting
+    if (!validateDataset(dataset.values)) {
+      setError("Invalid dataset: Data structure is inconsistent or corrupted.");
+      return;
+    }
+    
+    setError(null);
     setSelectedDataset(dataset);
     setActiveTab('transform');
+  };
+
+  const handleImageDataExtracted = async (dataset: DatasetMetadata) => {
+    try {
+      await storeDataset(dataset);
+      await loadDatasets();
+      setError(null);
+      // Show success message or feedback
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save extracted dataset';
+      console.error('Failed to save extracted dataset:', error);
+      setError(errorMessage);
+    }
   };
 
   const handleTransformComplete = () => {
@@ -176,6 +228,13 @@ export const DataManagement = () => {
             Datasets
           </Tab>
           <Tab 
+            $active={activeTab === 'image'} 
+            onClick={() => setActiveTab('image')}
+          >
+            <ImageIcon fontSize="small" />
+            Image Extraction
+          </Tab>
+          <Tab 
             $active={activeTab === 'transform'} 
             onClick={() => setActiveTab('transform')}
             disabled={!selectedDataset}
@@ -184,6 +243,13 @@ export const DataManagement = () => {
           </Tab>
         </TabContainer>
       </TopBar>
+
+      {error && (
+        <ErrorMessage>
+          <span>⚠️</span>
+          <span>{error}</span>
+        </ErrorMessage>
+      )}
 
       {activeTab === 'datasets' && (
         <>
@@ -196,6 +262,7 @@ export const DataManagement = () => {
                   <DatasetCard 
                     key={dataset.id}
                     onClick={() => handleDatasetSelect(dataset)}
+                    $active={selectedDataset?.id === dataset.id}
                   >
                     <h3>{dataset.name}</h3>
                     <p>{dataset.rowCount} rows × {dataset.columnCount} columns</p>
@@ -235,6 +302,10 @@ export const DataManagement = () => {
             </EmptyState>
           )}
         </>
+      )}
+
+      {activeTab === 'image' && (
+        <ImageDataExtractor onDataExtracted={handleImageDataExtracted} />
       )}
 
       {activeTab === 'transform' && selectedDataset && (

@@ -19,6 +19,7 @@ A React-based visualization gallery and editor built with Vega-Lite. Create, cus
 - Visual chart editor with live preview
 - Data transformation and curation tools
 - Multiple chart types and encoding options
+- Image data extraction using OCR for chart digitization
 - Customizable styles and themes
 
 ## Getting Started
@@ -112,6 +113,7 @@ npm run build
 - Quality metrics and cleaning
 - AI-suggested transformations
 - Data relationship discovery
+- Image data extraction with OCR technology
 
 ### 📊 Visualization Studio
 1. **Visual Editor**
@@ -139,6 +141,15 @@ npm run build
    - Multi-dimensional: Heatmap, Parallel Coordinates
    - And more...
 
+### 📷 Image Data Extraction
+- **Browser-based OCR**: Extract data from charts and tables in images using Tesseract.js
+- **Cloud Vision API Integration**: Option to use Google Cloud Vision API for higher accuracy
+- **Multiple Image Formats**: Support for JPEG, PNG, GIF, and PDF files
+- **Intelligent Table Recognition**: Automatic detection of tabular structures
+- **CSV and Table Parsing**: Converts recognized text into structured data formats
+- **Auto Data Type Detection**: Intelligently determines column data types
+- **Drag-and-Drop Interface**: Simple upload with drag-and-drop capabilities
+
 ### 📚 Story Builder
 - Dashboard composition
 - Narrative flow design
@@ -164,6 +175,7 @@ npm run dev
 - TypeScript
 - Vega-Lite
 - Monaco Editor
+- Tesseract.js for OCR
 - Styled Components
 - Material UI
 - Vite
@@ -178,6 +190,7 @@ npm run dev
 - Basic AI recommendations
 - Responsive layout system
 - Advanced comparison charts (Violin, Heatmap, Parallel Coordinates)
+- OCR-based image data extraction
 
 ### 🔄 In Progress
 - Enhanced data transformation tools
@@ -231,7 +244,6 @@ Contributions are welcome! Please read our contributing guidelines for details.
 
 ## 📄 License
 
-<<<<<<< HEAD
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 📚 Documentation
@@ -449,6 +461,3 @@ import { VegaChart } from 'vega-gallery';
    - Chart spec caching
    - Data memoization
    - Component memoization
-=======
-This project is licensed under the MIT License - see the LICENSE file for details. 
->>>>>>> 6cc680a45f9cf7215bd8a8dc72b8a0f686f11407

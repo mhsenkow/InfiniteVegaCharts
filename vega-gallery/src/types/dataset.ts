@@ -4,7 +4,7 @@ export interface DatasetMetadata {
   description: string;
   values: any[];  // Always an array of data
   dataTypes?: Record<string, string>;
-  source?: 'sample' | 'upload';
+  source?: 'sample' | 'upload' | 'Tesseract OCR' | 'Cloud Vision API';
   uploadDate: string;  // ISO string format
   rowCount: number;
   columnCount: number;

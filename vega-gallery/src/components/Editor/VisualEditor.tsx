@@ -607,6 +607,18 @@ const MARK_ENCODINGS: Record<MarkType, {
       radius: 'Level in hierarchy'
     },
     icon: '🟡'
+  },
+  'parallel-coordinates': {
+    channels: ['dimensions', 'color', 'detail', 'opacity', 'tooltip', 'order'],
+    description: 'Show multidimensional data with lines across parallel axes',
+    hints: {
+      dimensions: 'Numeric fields to show as parallel axes',
+      color: 'Category to color lines by',
+      detail: 'Field to separate lines by (usually ID)',
+      order: 'Order of the dimensions',
+      opacity: 'Useful to manage overlapping lines'
+    },
+    icon: '📊'
   }
 };
 

@@ -104,72 +104,57 @@ export const timeSeries = {
       values: Array.from({ length: 60 }, (_, i) => 
         ['A', 'B', 'C'].map(category => ({
           time: i,
-          category,
-          value: Math.sin(i / 10 + ['A', 'B', 'C'].indexOf(category)) * 10 + 20
+          value: Math.sin(i / 10 + ['A', 'B', 'C'].indexOf(category)) * 10 + 20,
+          category: category
         }))
       ).flat()
     },
-    mark: 'area',
+    mark: {
+      type: 'area',
+      interpolate: 'monotone'
+    },
     encoding: {
       x: { field: 'time', type: 'quantitative' },
-      y: { 
-        field: 'value',
-        type: 'quantitative',
-        stack: 'center'
-      },
+      y: { field: 'value', type: 'quantitative', stack: 'center' },
       color: { field: 'category', type: 'nominal' }
     }
   } as TopLevelSpec,
   'radial-plot': {
     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-    width: 400,
-    height: 400,
     data: {
       values: Array.from({ length: 24 }, (_, i) => ({
         hour: i,
-        value: Math.sin(i / 4) * 10 + Math.random() * 5 + 15
+        value: 20 + Math.sin(i / 24 * Math.PI * 2) * 10 + Math.random() * 5
       }))
     },
-    mark: 'line',
     encoding: {
       theta: { field: 'hour', type: 'quantitative', scale: { domain: [0, 24] } },
-      radius: { field: 'value', type: 'quantitative' },
-      color: { value: '#675193' }
-    }
+      radius: { field: 'value', type: 'quantitative' }
+    },
+    mark: 'line',
+    width: 300,
+    height: 300
   } as TopLevelSpec,
   'interactive-multiline': {
     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
     data: {
-      values: Array.from({ length: 100 }, (_, i) => 
+      values: Array.from({ length: 60 }, (_, i) => 
         ['A', 'B', 'C'].map(series => ({
           time: i,
-          series,
-          value: Math.sin(i / 10 + ['A', 'B', 'C'].indexOf(series)) * 10 + Math.random() * 5 + 20
+          value: Math.sin(i / 10 + ['A', 'B', 'C'].indexOf(series) * 2) * 10 + 20,
+          series: series
         }))
       ).flat()
     },
-    mark: 'line',
+    mark: { type: 'line', point: true },
     encoding: {
       x: { field: 'time', type: 'quantitative' },
       y: { field: 'value', type: 'quantitative' },
       color: { field: 'series', type: 'nominal' }
     },
-    params: [{
-      name: 'hover',
-      select: {
-        type: 'point',
-        fields: ['series'],
-        on: 'mouseover'
-      }
-    }],
-    transform: [
-      {
-        filter: {
-          param: 'hover',
-          empty: true
-        }
-      }
-    ]
+    selection: {
+      highlight: { type: 'single', on: 'mouseover', nearest: true }
+    }
   } as TopLevelSpec
 };
 
@@ -230,19 +215,76 @@ export const comparison = {
   'parallel-coordinates': {
     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
     data: {
-      values: Array.from({ length: 100 }, () => ({
-        id: Math.floor(Math.random() * 10),
+      values: Array.from({ length: 20 }, (_, i) => ({
+        id: i,
         dim1: Math.random() * 100,
         dim2: Math.random() * 100,
         dim3: Math.random() * 100,
-        dim4: Math.random() * 100,
         category: ['A', 'B', 'C'][Math.floor(Math.random() * 3)]
       }))
     },
-    mark: 'line',
+    transform: [
+      { fold: ['dim1', 'dim2', 'dim3'] }
+    ],
+    mark: { type: 'line', opacity: 0.5 },
     encoding: {
-      x: { field: 'id', type: 'ordinal' },
-      y: { field: 'value', type: 'quantitative' },
+      x: { field: 'key', type: 'nominal' },
+      y: { field: 'value', type: 'quantitative', scale: { zero: false } },
+      color: { field: 'category', type: 'nominal' },
+      detail: { field: 'id', type: 'nominal' }
+    }
+  } as TopLevelSpec,
+  'stacked-bar': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: Array.from({ length: 20 }, (_, i) => 
+        ['A', 'B', 'C'].map(category => ({
+          x: `Day ${i % 5 + 1}`,
+          value: Math.random() * 30 + 10,
+          category: category
+        }))
+      ).flat()
+    },
+    mark: 'bar',
+    encoding: {
+      x: { field: 'x', type: 'ordinal' },
+      y: { field: 'value', type: 'quantitative', stack: 'zero' },
+      color: { field: 'category', type: 'nominal' }
+    }
+  } as TopLevelSpec,
+  'stacked-area': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: Array.from({ length: 60 }, (_, i) => 
+        ['A', 'B', 'C'].map(category => ({
+          time: i,
+          value: Math.sin(i / 10 + ['A', 'B', 'C'].indexOf(category)) * 10 + 20,
+          category: category
+        }))
+      ).flat()
+    },
+    mark: { type: 'area', interpolate: 'monotone' },
+    encoding: {
+      x: { field: 'time', type: 'quantitative' },
+      y: { field: 'value', type: 'quantitative', stack: 'zero' },
+      color: { field: 'category', type: 'nominal' }
+    }
+  } as TopLevelSpec,
+  'normalized-bar': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: Array.from({ length: 20 }, (_, i) => 
+        ['A', 'B', 'C'].map(category => ({
+          x: `Category ${i % 5 + 1}`,
+          value: Math.random() * 30 + 10,
+          category: category
+        }))
+      ).flat()
+    },
+    mark: 'bar',
+    encoding: {
+      x: { field: 'x', type: 'ordinal' },
+      y: { field: 'value', type: 'quantitative', stack: 'normalize' },
       color: { field: 'category', type: 'nominal' }
     }
   } as TopLevelSpec
@@ -290,101 +332,206 @@ export const partToWhole = {
       theta: { field: 'value', type: 'quantitative', stack: true },
       color: { field: 'category', type: 'nominal' }
     }
+  } as TopLevelSpec,
+  'waffle-chart': {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    data: {
+      values: Array.from({ length: 100 }, (_, i) => ({
+        value: i,
+        category: i < 30 ? 'A' : i < 60 ? 'B' : i < 85 ? 'C' : 'D'
+      }))
+    },
+    mark: 'square',
+    encoding: {
+      x: {
+        field: 'value',
+        type: 'ordinal',
+        scale: { domain: Array.from({ length: 10 }, (_, i) => i) }
+      },
+      y: {
+        field: 'value',
+        type: 'ordinal',
+        scale: { domain: Array.from({ length: 10 }, (_, i) => i) }
+      },
+      color: { field: 'category', type: 'nominal' }
+    }
   } as TopLevelSpec
 };
 
 // Hierarchical Charts
 export const hierarchical = {
   'treemap': {
-    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-    width: 400,
-    height: 300,
-    data: {
-      values: [
-        { id: 1, parent: null, name: 'Root', value: 100 },
-        { id: 2, parent: 1, name: 'Category A', value: 50 },
-        { id: 3, parent: 1, name: 'Category B', value: 30 },
-        { id: 4, parent: 1, name: 'Category C', value: 20 },
-        { id: 5, parent: 2, name: 'A1', value: 25 },
-        { id: 6, parent: 2, name: 'A2', value: 25 },
-        { id: 7, parent: 3, name: 'B1', value: 15 },
-        { id: 8, parent: 3, name: 'B2', value: 15 },
-        { id: 9, parent: 4, name: 'C1', value: 10 },
-        { id: 10, parent: 4, name: 'C2', value: 10 }
-      ]
-    },
-    mark: 'rect',
-    encoding: {
-      x: { field: 'name', type: 'nominal' },
-      y: { field: 'value', type: 'quantitative' },
-      color: { field: 'name', type: 'nominal' }
-    },
-    transform: [
+    $schema: 'https://vega.github.io/schema/vega/v5.json',
+    padding: 5,
+    data: [
       {
-        aggregate: [{ op: 'sum', field: 'value', as: 'value' }],
-        groupby: ['name']
+        name: 'tree',
+        values: [
+          {"id": 1, "name": "Root", "parent": null, "size": 100},
+          {"id": 2, "name": "A", "parent": 1, "size": 50},
+          {"id": 3, "name": "B", "parent": 1, "size": 30},
+          {"id": 4, "name": "C", "parent": 1, "size": 20},
+          {"id": 5, "name": "A1", "parent": 2, "size": 20},
+          {"id": 6, "name": "A2", "parent": 2, "size": 30},
+          {"id": 7, "name": "B1", "parent": 3, "size": 15},
+          {"id": 8, "name": "B2", "parent": 3, "size": 15},
+          {"id": 9, "name": "C1", "parent": 4, "size": 20}
+        ],
+        transform: [
+          { type: "stratify", key: "id", parentKey: "parent" },
+          { type: "treemap", field: "size", sort: { field: "value", order: "descending" } }
+        ]
+      }
+    ],
+    marks: [
+      {
+        type: "rect",
+        from: { data: "tree" },
+        encode: {
+          enter: {
+            x: { field: "x0" },
+            y: { field: "y0" },
+            x2: { field: "x1" },
+            y2: { field: "y1" },
+            fill: { scale: "color", field: "name" },
+            stroke: { value: "white" }
+          }
+        }
+      }
+    ],
+    scales: [
+      {
+        name: "color",
+        type: "ordinal",
+        range: { scheme: "category10" }
       }
     ]
-  } as TopLevelSpec,
+  } as VegaSpec,
   'sunburst': {
-    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-    width: 400,
-    height: 400,
-    data: {
-      values: [
-        { id: 1, parent: null, name: 'Root', value: 100 },
-        { id: 2, parent: 1, name: 'Category A', value: 50 },
-        { id: 3, parent: 1, name: 'Category B', value: 30 },
-        { id: 4, parent: 1, name: 'Category C', value: 20 },
-        { id: 5, parent: 2, name: 'A1', value: 25 },
-        { id: 6, parent: 2, name: 'A2', value: 25 },
-        { id: 7, parent: 3, name: 'B1', value: 15 },
-        { id: 8, parent: 3, name: 'B2', value: 15 },
-        { id: 9, parent: 4, name: 'C1', value: 10 },
-        { id: 10, parent: 4, name: 'C2', value: 10 }
-      ]
-    },
-    mark: 'arc',
-    encoding: {
-      theta: { field: 'value', type: 'quantitative', stack: true },
-      radius: { field: 'id', type: 'ordinal', sort: 'ascending' },
-      color: { field: 'name', type: 'nominal' }
-    }
-  } as TopLevelSpec
+    $schema: 'https://vega.github.io/schema/vega/v5.json',
+    padding: 5,
+    data: [
+      {
+        name: "tree",
+        values: [
+          {"id": 1, "name": "Root", "parent": null, "size": 100},
+          {"id": 2, "name": "A", "parent": 1, "size": 50},
+          {"id": 3, "name": "B", "parent": 1, "size": 30},
+          {"id": 4, "name": "C", "parent": 1, "size": 20},
+          {"id": 5, "name": "A1", "parent": 2, "size": 20},
+          {"id": 6, "name": "A2", "parent": 2, "size": 30},
+          {"id": 7, "name": "B1", "parent": 3, "size": 15},
+          {"id": 8, "name": "B2", "parent": 3, "size": 15},
+          {"id": 9, "name": "C1", "parent": 4, "size": 20}
+        ],
+        transform: [
+          { type: "stratify", key: "id", parentKey: "parent" },
+          { 
+            type: "partition", 
+            field: "size", 
+            sort: { field: "value", order: "descending" },
+            size: [{ signal: "width" }, { signal: "height" }],
+            round: true
+          }
+        ]
+      }
+    ],
+    scales: [
+      {
+        name: "color",
+        type: "ordinal",
+        range: { scheme: "category10" }
+      }
+    ],
+    marks: [
+      {
+        type: "arc",
+        from: { data: "tree" },
+        encode: {
+          enter: {
+            x: { signal: "width / 2" },
+            y: { signal: "height / 2" },
+            fill: { scale: "color", field: "name" },
+            stroke: { value: "white" }
+          },
+          update: {
+            startAngle: { field: "x0" },
+            endAngle: { field: "x1" },
+            innerRadius: { field: "y0" },
+            outerRadius: { field: "y1" }
+          }
+        }
+      }
+    ]
+  } as VegaSpec
 };
 
 // Text Analysis Charts
 export const textAnalysis = {
   'word-cloud': {
-    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-    width: 600,
-    height: 400,
-    data: {
-      values: [
-        { text: 'data', value: 50 },
-        { text: 'visualization', value: 45 },
-        { text: 'analysis', value: 40 },
-        { text: 'chart', value: 35 },
-        { text: 'graph', value: 30 },
-        { text: 'interactive', value: 25 },
-        { text: 'statistics', value: 20 }
-      ]
-    },
-    mark: 'text',
-    encoding: {
-      text: { field: 'text' },
-      size: { 
-        field: 'value',
-        type: 'quantitative',
-        scale: { range: [12, 48] }
-      },
-      color: {
-        field: 'value',
-        type: 'quantitative',
-        scale: { scheme: 'blues' }
+    $schema: 'https://vega.github.io/schema/vega/v5.json',
+    data: [
+      {
+        name: "words",
+        values: [
+          {"text": "data", "value": 65},
+          {"text": "visualization", "value": 60},
+          {"text": "chart", "value": 55},
+          {"text": "graph", "value": 50},
+          {"text": "analytics", "value": 45},
+          {"text": "interactive", "value": 40},
+          {"text": "dashboard", "value": 35},
+          {"text": "Vega", "value": 30},
+          {"text": "Lite", "value": 25},
+          {"text": "gallery", "value": 20},
+          {"text": "analysis", "value": 18},
+          {"text": "explore", "value": 15},
+          {"text": "insight", "value": 12},
+          {"text": "trend", "value": 10}
+        ]
       }
-    }
-  } as TopLevelSpec
+    ],
+    marks: [
+      {
+        type: "text",
+        from: { data: "words" },
+        encode: {
+          enter: {
+            text: { field: "text" },
+            fontSize: { scale: "size", field: "value" },
+            fill: { scale: "color", field: "value" },
+            xc: { signal: "width / 2" },
+            yc: { signal: "height / 2" },
+            align: { value: "center" },
+            baseline: { value: "middle" }
+          }
+        },
+        transform: [
+          {
+            type: "wordcloud",
+            size: [800, 400],
+            text: { field: "text" },
+            fontSize: { field: "value", scale: "sqrt" },
+            padding: 2
+          }
+        ]
+      }
+    ],
+    scales: [
+      {
+        name: "size",
+        type: "linear",
+        domain: { data: "words", field: "value" },
+        range: [10, 56]
+      },
+      {
+        name: "color",
+        type: "linear",
+        domain: { data: "words", field: "value" },
+        range: { scheme: "blues" }
+      }
+    ]
+  } as VegaSpec
 };
 
 // Export all chart specifications
@@ -404,8 +551,8 @@ export const sampleCharts: ChartConfig[] = [
     id: 'scatter-plot',
     title: 'Scatter Plot',
     description: 'A basic scatter plot showing the relationship between two variables',
-    category: 'Statistical',
-    complexity: 'Beginner',
+    category: ChartCategory.Statistical,
+    complexity: Complexity.Beginner,
     spec: statistical['scatter-plot'],
     metadata: {
       tags: ['correlation', 'distribution', 'points'],
@@ -418,40 +565,40 @@ export const sampleCharts: ChartConfig[] = [
     id: 'bar-chart',
     title: 'Bar Chart',
     description: 'Simple bar chart for comparing categorical data',
-    category: 'Statistical',
-    complexity: 'Beginner',
+    category: ChartCategory.Statistical,
+    complexity: Complexity.Beginner,
     spec: statistical['bar-chart']
   },
   {
     id: 'line-chart',
     title: 'Line Chart',
     description: 'Time series visualization showing trends over time',
-    category: 'Time Series',
-    complexity: 'Beginner',
+    category: ChartCategory.TimeSeries,
+    complexity: Complexity.Beginner,
     spec: timeSeries['line-chart']
   },
   {
     id: 'area-growth',
     title: 'Area Chart',
     description: 'Area chart showing cumulative growth',
-    category: 'Time Series',
-    complexity: 'Intermediate',
+    category: ChartCategory.TimeSeries,
+    complexity: Complexity.Intermediate,
     spec: timeSeries['area-growth']
   },
   {
     id: 'pie-chart',
     title: 'Pie Chart',
     description: 'Circular statistical visualization for part-to-whole relationships',
-    category: 'Part-to-Whole',
-    complexity: 'Intermediate',
+    category: ChartCategory.PartToWhole,
+    complexity: Complexity.Intermediate,
     spec: partToWhole['pie-chart']
   },
   {
     id: 'treemap',
     title: 'Treemap',
     description: 'Hierarchical data visualization using nested rectangles',
-    category: 'Hierarchical',
-    complexity: 'Intermediate',
+    category: ChartCategory.Hierarchical,
+    complexity: Complexity.Intermediate,
     spec: hierarchical['treemap'],
     metadata: {
       useCase: ['Data Analysis', 'Business Reporting'],
@@ -463,72 +610,72 @@ export const sampleCharts: ChartConfig[] = [
     id: 'sunburst',
     title: 'Sunburst Chart',
     description: 'Radial visualization of hierarchical data',
-    category: 'Hierarchical',
-    complexity: 'Advanced',
+    category: ChartCategory.Hierarchical,
+    complexity: Complexity.Advanced,
     spec: hierarchical['sunburst']
   },
   {
     id: 'bubble-plot',
     title: 'Bubble Plot',
     description: 'Scatter plot with sized circles for multivariate data',
-    category: 'Correlation',
-    complexity: 'Intermediate',
+    category: ChartCategory.Correlation,
+    complexity: Complexity.Intermediate,
     spec: correlation['bubble-plot']
   },
   {
     id: 'word-cloud',
     title: 'Word Cloud',
     description: 'Text visualization with size encoding for frequency',
-    category: 'Text Analysis',
-    complexity: 'Intermediate',
+    category: ChartCategory.TextAnalysis,
+    complexity: Complexity.Intermediate,
     spec: textAnalysis['word-cloud']
   },
   {
     id: 'boxplot-distribution',
     title: 'Box Plot',
     description: 'Statistical distribution across categories',
-    category: 'Statistical',
-    complexity: 'Intermediate',
+    category: ChartCategory.Statistical,
+    complexity: Complexity.Intermediate,
     spec: statistical['boxplot-distribution']
   },
   {
     id: 'heatmap-correlation',
     title: 'Correlation Heatmap',
     description: 'Interactive heatmap showing correlation between variables',
-    category: 'Statistical',
-    complexity: 'Intermediate',
+    category: ChartCategory.Statistical,
+    complexity: Complexity.Intermediate,
     spec: statistical['heatmap-correlation']
   },
   {
     id: 'stream-graph',
     title: 'Stream Graph',
     description: 'Flowing visualization of temporal patterns',
-    category: 'Time Series',
-    complexity: 'Advanced',
+    category: ChartCategory.TimeSeries,
+    complexity: Complexity.Advanced,
     spec: timeSeries['stream-graph']
   },
   {
     id: 'radial-plot',
     title: 'Radial Plot',
     description: 'Circular visualization of periodic patterns',
-    category: 'Time Series',
-    complexity: 'Advanced',
+    category: ChartCategory.TimeSeries,
+    complexity: Complexity.Advanced,
     spec: timeSeries['radial-plot']
   },
   {
     id: 'interactive-multiline',
     title: 'Interactive Multi-Line',
     description: 'Interactive time series with multiple series',
-    category: 'Time Series',
-    complexity: 'Advanced',
+    category: ChartCategory.TimeSeries,
+    complexity: Complexity.Advanced,
     spec: timeSeries['interactive-multiline']
   },
   {
     id: 'violin-plot',
     title: 'Violin Plot',
     description: 'Distribution visualization showing density across categories',
-    category: 'Comparison',
-    complexity: 'Intermediate',
+    category: ChartCategory.Comparison,
+    complexity: Complexity.Intermediate,
     spec: comparison['violin-plot'],
     metadata: {
       tags: ['distribution', 'density', 'categories'],
@@ -541,8 +688,8 @@ export const sampleCharts: ChartConfig[] = [
     id: 'heatmap',
     title: 'Correlation Heatmap',
     description: 'Interactive heatmap showing correlation between variables',
-    category: 'Comparison',
-    complexity: 'Intermediate',
+    category: ChartCategory.Comparison,
+    complexity: Complexity.Intermediate,
     spec: comparison['heatmap'],
     metadata: {
       tags: ['correlation', 'matrix', 'intensity'],
@@ -555,13 +702,13 @@ export const sampleCharts: ChartConfig[] = [
     id: 'parallel-coordinates',
     title: 'Parallel Coordinates',
     description: 'Multi-dimensional data visualization for comparing variables',
-    category: 'Comparison',
-    complexity: 'Advanced',
+    category: ChartCategory.Comparison,
+    complexity: Complexity.Advanced,
     spec: comparison['parallel-coordinates'],
     metadata: {
       tags: ['multi-dimensional', 'comparison', 'lines'],
       dataRequirements: {
-        requiredFields: ['id', 'dim1', 'dim2', 'dim3', 'dim4', 'category']
+        requiredFields: ['id', 'dim1', 'dim2', 'dim3', 'category']
       }
     }
   },

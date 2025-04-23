@@ -4,6 +4,7 @@ import { ChartEncoding } from '../../types/vega';
 import { Button } from '@mui/material';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
 import { generateRandomEncoding } from '../../utils/chartAdapters';
+import { detectDataTypes } from '../../utils/dataUtils';
 
 const EncodingSection = styled.div`
   margin-top: 16px;
@@ -62,7 +63,17 @@ export const EncodingControls: React.FC<EncodingControlsProps> = ({
   children
 }) => {
   const handleRandomizeEncodings = () => {
-    const randomEncoding = generateRandomEncoding(availableFields);
+    if (availableFields.length === 0) {
+      console.warn('No available fields for encoding');
+      return;
+    }
+    
+    // Detect data types for available fields
+    const dataTypes = dataset && dataset.length > 0 
+      ? detectDataTypes(dataset) 
+      : availableFields.reduce((acc, field) => ({...acc, [field]: 'nominal'}), {});
+    
+    const randomEncoding = generateRandomEncoding(chartType, availableFields, dataTypes);
     onEncodingChange(randomEncoding);
   };
 
@@ -76,6 +87,7 @@ export const EncodingControls: React.FC<EncodingControlsProps> = ({
             onClick={handleRandomizeEncodings}
             variant="outlined"
             size="small"
+            disabled={availableFields.length === 0}
           >
             Randomize
           </StyledButton>

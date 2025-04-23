@@ -2,7 +2,7 @@ import { TopLevelSpec as VegaLiteSpec } from 'vega-lite'
 import { Spec as VegaSpec } from 'vega'
 import vegaEmbed, { EmbedOptions, Config } from 'vega-embed'
 import { ChartStyle } from '../types/chart'
-import { ExtendedSpec } from '../types/vega'
+import { ExtendedSpec, MarkType } from '../types/vega'
 
 interface RenderOptions {
   mode?: 'gallery' | 'editor';
@@ -161,6 +161,22 @@ const applyChartStyles = (spec: VegaLiteSpec | VegaSpec, style?: Partial<ChartSt
   };
 };
 
+/**
+ * Renders a Vega-Lite specification into the provided element.
+ * 
+ * Special handling is applied for:
+ * 1. parallel-coordinates charts:
+ *    - Use a line mark type with a fold transform
+ *    - The filled property MUST be explicitly set to false
+ * 
+ * 2. wordcloud charts:
+ *    - Use a text mark type with special encoding
+ *    - Explicitly set alignment properties
+ * 
+ * @param element The HTML element to render the chart into
+ * @param spec The ExtendedSpec to render
+ * @param options Options for rendering (mode, style, etc.)
+ */
 export const renderVegaLite = async (
   element: HTMLElement, 
   spec: ExtendedSpec,
@@ -170,41 +186,88 @@ export const renderVegaLite = async (
     // Helper to determine if mark should be filled
     const shouldFillMark = (markType: string) => {
       const filledMarks = ['bar', 'arc', 'area', 'rect', 'square'];
+      const nonFilledMarks = ['line', 'point', 'circle', 'text', 'parallel-coordinates', 'wordcloud'];
+      
+      if (nonFilledMarks.includes(markType)) {
+        return false;
+      }
+      
       return filledMarks.includes(markType);
     };
 
-    // Process mark configuration
-    const processedMark = (() => {
-      if (typeof spec.mark === 'string') {
-        return shouldFillMark(spec.mark) ? { type: spec.mark, filled: true } : { type: spec.mark };
-      }
-      if (typeof spec.mark === 'object') {
-        return shouldFillMark(spec.mark.type) 
-          ? { ...spec.mark, filled: true }
-          : spec.mark;
-      }
-      return { type: 'point' };
-    })();
+    // Check if we're dealing with a parallel coordinates chart
+    const isParallelCoordinates = 
+      (typeof spec.mark === 'string' && spec.mark === 'parallel-coordinates') || 
+      (typeof spec.mark === 'object' && spec.mark.type === 'parallel-coordinates');
 
-    const enhancedSpec = {
-      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-      width: spec.width || element.clientWidth || 600,
-      height: spec.height || element.clientHeight || 400,
-      mark: processedMark,
-      data: spec.data || { values: [] },
-      encoding: spec.encoding || {},
-      transform: spec.transform,
-      config: {
-        ...spec.config,
-        view: {
-          continuousWidth: true,
-          continuousHeight: true,
-          ...spec.config?.view
+    // Check if we're dealing with a word cloud chart
+    const isWordCloud = 
+      (typeof spec.mark === 'string' && spec.mark === 'wordcloud') || 
+      (typeof spec.mark === 'object' && spec.mark.type === 'wordcloud');
+
+    let renderedSpec: any = { ...spec };
+
+    // Make a deep copy of the spec to avoid mutation issues
+    if (isParallelCoordinates) {
+      // For parallel coordinates, we need to ensure we use a line mark type
+      renderedSpec = { 
+        ...spec,
+        mark: { 
+          type: 'line', 
+          opacity: 0.5,
+          filled: false 
         }
+      };
+    } else if (isWordCloud) {
+      // For word cloud, we need to ensure we use a text mark type
+      renderedSpec = {
+        ...spec,
+        mark: {
+          type: 'text',
+          baseline: 'middle',
+          align: 'center'
+        }
+      };
+    } else {
+      // Process mark configuration for other chart types
+      const markType = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type;
+      
+      if (typeof spec.mark === 'string') {
+        renderedSpec.mark = shouldFillMark(spec.mark) ? 
+          { type: spec.mark, filled: true } : 
+          { type: spec.mark };
+      } else if (typeof spec.mark === 'object' && spec.mark.type) {
+        renderedSpec.mark = shouldFillMark(spec.mark.type) ? 
+          { ...spec.mark, filled: true } : 
+          spec.mark;
       }
+    }
+
+    // Add schema, dimensions, etc.
+    renderedSpec = {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      ...renderedSpec,
+      width: renderedSpec.width || element.clientWidth || 600,
+      height: renderedSpec.height || element.clientHeight || 400,
     };
 
-    await vegaEmbed(element, enhancedSpec, {
+    // Clean up incompatible properties for specific mark types
+    const cleanupIncompatibleProperties = (spec: any) => {
+      const markType = typeof spec.mark === 'string' ? spec.mark : spec.mark?.type;
+      
+      // For arc marks, remove incompatible encodings
+      if (markType === 'arc' && spec.encoding) {
+        const { size, ...restEncodings } = spec.encoding;
+        spec.encoding = restEncodings;
+      }
+      
+      return spec;
+    };
+    
+    // Apply cleanup for incompatible properties
+    renderedSpec = cleanupIncompatibleProperties(renderedSpec);
+
+    await vegaEmbed(element, renderedSpec, {
       actions: false,
       renderer: 'svg',
       hover: true

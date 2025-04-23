@@ -5,7 +5,8 @@ export type EncodingChannel =
   | 'x' | 'y' | 'color' | 'size' | 'tooltip' | 'opacity'
   | 'strokeWidth' | 'shape' | 'text' | 'angle'
   | 'theta' | 'radius' | 'x2' | 'y2'
-  | 'url' | 'width' | 'height' | 'order';
+  | 'url' | 'width' | 'height' | 'order'
+  | 'dimensions' | 'detail' | 'density' | 'bandwidth';
 export type MarkType = 
   | 'bar' 
   | 'line' 
@@ -17,7 +18,17 @@ export type MarkType =
   | 'rule'
   | 'text'
   | 'tick'
-  | 'arc';
+  | 'arc'
+  | 'pie'
+  | 'boxplot'
+  | 'violin'
+  | 'trail'
+  | 'treemap'
+  | 'sunburst'
+  | 'wordcloud'
+  | 'chord-diagram'
+  | 'force-directed'
+  | 'parallel-coordinates';
 
 export interface EncodingUpdate {
   field?: string
@@ -64,7 +75,6 @@ export interface ChartEncoding {
 // First, let's extend our Vega spec type to include all possible properties
 export interface VegaMarkConfig {
   // Common mark properties
-  opacity?: number;
   fill?: string;
   fillOpacity?: number;
   stroke?: string;
@@ -72,6 +82,7 @@ export interface VegaMarkConfig {
   strokeOpacity?: number;
   strokeDash?: number[];
   size?: number;
+  opacity?: number;
   
   // Shape properties
   cornerRadius?: number;
@@ -195,7 +206,6 @@ export interface VegaMarkConfig {
   // Advanced rendering
   compositeOperation?: string;
   imageSmoothing?: boolean;
-  opacity?: number;
   blendMode?: 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten';
 }
 
@@ -231,7 +241,6 @@ export interface PatternConfig {
   foreground?: string;
   size?: number;
   rotation?: number;
-  opacity?: number;
 }
 
 export interface ShadowConfig {

@@ -55,6 +55,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     onEncodingChange(newEncoding);
   };
 
+  // Special handling for parallel coordinates chart
+  const isParallelCoordinates = chartType === 'parallel-coordinates';
+
   return (
     <div>
       <EncodingSection>
@@ -64,30 +67,61 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           onEncodingChange={onEncodingChange}
           availableFields={getAvailableFields(dataset)}
         >
-          <EncodingField
-            label="X"
-            field={encoding.x?.field || ""}
-            type={encoding.x?.type || "quantitative"}
-            onChange={(field, type) => handleEncodingChange('x', field, type)}
-          />
-          <EncodingField
-            label="Y"
-            field={encoding.y?.field || ""}
-            type={encoding.y?.type || "quantitative"}
-            onChange={(field, type) => handleEncodingChange('y', field, type)}
-          />
-          <EncodingField
-            label="COLOR"
-            field={encoding.color?.field || ""}
-            type={encoding.color?.type || "nominal"}
-            onChange={(field, type) => handleEncodingChange('color', field, type)}
-          />
-          <EncodingField
-            label="SIZE"
-            field={encoding.size?.field || ""}
-            type={encoding.size?.type || "quantitative"}
-            onChange={(field, type) => handleEncodingChange('size', field, type)}
-          />
+          {isParallelCoordinates ? (
+            <>
+              <EncodingField
+                label="DIMENSIONS"
+                field={encoding.dimensions?.field || ""}
+                type={encoding.dimensions?.type || "quantitative"}
+                onChange={(field, type) => handleEncodingChange('dimensions', field, type)}
+              />
+              <EncodingField
+                label="DETAIL"
+                field={encoding.detail?.field || ""}
+                type={encoding.detail?.type || "nominal"}
+                onChange={(field, type) => handleEncodingChange('detail', field, type)}
+              />
+              <EncodingField
+                label="COLOR"
+                field={encoding.color?.field || ""}
+                type={encoding.color?.type || "nominal"}
+                onChange={(field, type) => handleEncodingChange('color', field, type)}
+              />
+              <EncodingField
+                label="OPACITY"
+                field={encoding.opacity?.field || ""}
+                type={encoding.opacity?.type || "quantitative"}
+                onChange={(field, type) => handleEncodingChange('opacity', field, type)}
+              />
+            </>
+          ) : (
+            <>
+              <EncodingField
+                label="X"
+                field={encoding.x?.field || ""}
+                type={encoding.x?.type || "quantitative"}
+                onChange={(field, type) => handleEncodingChange('x', field, type)}
+              />
+              <EncodingField
+                label="Y"
+                field={encoding.y?.field || ""}
+                type={encoding.y?.type || "quantitative"}
+                onChange={(field, type) => handleEncodingChange('y', field, type)}
+              />
+              <EncodingField
+                label="COLOR"
+                field={encoding.color?.field || ""}
+                type={encoding.color?.type || "nominal"}
+                onChange={(field, type) => handleEncodingChange('color', field, type)}
+              />
+              <EncodingField
+                label="SIZE"
+                field={encoding.size?.field || ""}
+                type={encoding.size?.type || "quantitative"}
+                onChange={(field, type) => handleEncodingChange('size', field, type)}
+              />
+            </>
+          )}
         </EncodingControls>
       </EncodingSection>
     </div>
