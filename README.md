@@ -11,6 +11,10 @@
 
 A React-based visualization gallery and editor built with Vega-Lite. Create, customize, and explore data visualizations with an intuitive interface.
 
+Got a basic electron version running! Should be here, or hit me up...if anyone reads this. 
+https://mhsenkow.org/experiments/VegaExplorer/Vega%20Gallery-0.0.0-arm64.dmg
+(Please don't hack me, I'm broke and a designer.)
+
 ![Vega Gallery Demo](https://raw.githubusercontent.com/yourusername/vega-gallery/main/docs/demo.gif)
 
 ## Features
