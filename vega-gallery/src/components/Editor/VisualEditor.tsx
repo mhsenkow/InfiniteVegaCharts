@@ -206,6 +206,15 @@ const RandomizeButton = styled.button`
   }
 `
 
+const TemplateButton = styled(RandomizeButton)`
+  background: #fff8e1;
+  border-color: #ffe082;
+  
+  &:hover {
+    background: #ffecb3;
+  }
+`;
+
 const EncodingHeader = styled.div`
   display: flex;
   justify-content: space-between;
@@ -481,6 +490,15 @@ interface DataTransform {
   operation?: string;
   value?: any;
   test?: (d: any) => boolean;
+}
+
+interface ChartTemplate {
+  name: string;
+  icon: string;
+  markType: MarkType;
+  description: string;
+  encodings: Record<string, any>;
+  config?: Record<string, any>;
 }
 
 interface VisualEditorProps {
@@ -1311,6 +1329,78 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
     return parsedSpec.mark?.type || 'point';
   }, [parsedSpec]);
 
+  const [templates, setTemplates] = useState<ChartTemplate[]>(CHART_TEMPLATES);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  const handleApplyTemplate = (template: ChartTemplate) => {
+    // Update mark type
+    setCurrentMark(template.markType);
+    
+    // Find fields that match the required types for the template
+    const dataValues = spec.data?.values || [];
+    if (!dataValues.length) return;
+    
+    const dataTypes = inferDataTypes(dataValues);
+    const fieldsByType = Object.entries(dataTypes).reduce((acc, [field, types]) => {
+      types.forEach(type => {
+        if (!acc[type]) acc[type] = [];
+        acc[type].push(field);
+      });
+      return acc;
+    }, {} as Record<string, string[]>);
+    
+    // Map template encodings to actual fields
+    const newEncodings = Object.entries(template.encodings).reduce((acc, [channel, config]) => {
+      const requiredType = config.type;
+      const fields = fieldsByType[requiredType] || [];
+      
+      if (fields.length > 0) {
+        // Choose different fields for different channels if possible
+        const availableFields = fields.filter(field => 
+          !Object.values(acc).some(enc => enc.field === field)
+        );
+        
+        const fieldToUse = availableFields.length > 0 ? availableFields[0] : fields[0];
+        
+        acc[channel] = {
+          field: fieldToUse,
+          type: requiredType,
+          ...(config.bin && { bin: config.bin }),
+          ...(config.aggregate && { aggregate: config.aggregate }),
+          ...(config.timeUnit && { timeUnit: config.timeUnit })
+        };
+      }
+      
+      return acc;
+    }, {});
+    
+    // Create mark configuration
+    const markConfig = typeof template.config === 'object' ? 
+      { type: template.markType, ...template.config } : 
+      template.markType;
+    
+    // Update encodings state
+    setEncodings(newEncodings);
+    
+    // Update the spec
+    const newSpec = {
+      ...spec,
+      mark: markConfig,
+      encoding: newEncodings
+    };
+    
+    // Apply the changes
+    onChange(newSpec);
+    
+    // Force chart re-render
+    if (onChartRender) {
+      onChartRender();
+    }
+    
+    // Hide templates panel
+    setShowTemplates(false);
+  };
+
   if (!spec) {
     return <div>Invalid specification</div>
   }
@@ -1455,10 +1545,39 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
               <RandomizeButton onClick={handleRandomizeEncodings}>
                 🎲 Random
               </RandomizeButton>
+              <TemplateButton onClick={() => setShowTemplates(!showTemplates)}>
+                📋 Templates
+              </TemplateButton>
               <RecommendButton onClick={handleRecommendEncodings}>
                 🤖 Smart
               </RecommendButton>
             </div>
+
+            {showTemplates && (
+              <div style={{ marginBottom: '16px' }}>
+                <Label>Chart Templates</Label>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                  gap: '8px',
+                  marginBottom: '16px'
+                }}>
+                  {templates.map((template, index) => (
+                    <RecommendationCard
+                      key={index}
+                      $active={false}
+                      onClick={() => handleApplyTemplate(template)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.5rem' }}>{template.icon}</span>
+                        <RecommendationTitle>{template.name}</RecommendationTitle>
+                      </div>
+                      <RecommendationReason>{template.description}</RecommendationReason>
+                    </RecommendationCard>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {recommendations.length > 0 && (
               <div style={{ marginBottom: '16px' }}>
@@ -1642,4 +1761,77 @@ const isCompatibleEncoding = (channel: string, markType: MarkType): boolean => {
   };
 
   return compatibleChannels[markType]?.includes(channel) ?? false;
-}; 
+};
+
+// Add these chart templates after the interfaces
+const CHART_TEMPLATES: ChartTemplate[] = [
+  {
+    name: 'Time Series',
+    icon: '📈',
+    markType: 'line',
+    description: 'Visualize trends over time',
+    encodings: {
+      x: { type: 'temporal' },
+      y: { type: 'quantitative' },
+      color: { type: 'nominal' }
+    },
+    config: {
+      interpolate: 'monotone',
+      point: true
+    }
+  },
+  {
+    name: 'Bar Comparison',
+    icon: '📊',
+    markType: 'bar',
+    description: 'Compare values across categories',
+    encodings: {
+      x: { type: 'nominal' },
+      y: { type: 'quantitative' },
+      color: { type: 'nominal' }
+    }
+  },
+  {
+    name: 'Scatter Plot',
+    icon: '🔵',
+    markType: 'point',
+    description: 'Visualize relationships between two variables',
+    encodings: {
+      x: { type: 'quantitative' },
+      y: { type: 'quantitative' },
+      size: { type: 'quantitative' },
+      color: { type: 'nominal' }
+    }
+  },
+  {
+    name: 'Pie Chart',
+    icon: '🥧',
+    markType: 'arc',
+    description: 'Show proportions of the whole',
+    encodings: {
+      theta: { type: 'quantitative' },
+      color: { type: 'nominal' }
+    }
+  },
+  {
+    name: 'Heatmap',
+    icon: '🟥',
+    markType: 'rect',
+    description: 'Visualize data density in two dimensions',
+    encodings: {
+      x: { type: 'nominal' },
+      y: { type: 'nominal' },
+      color: { type: 'quantitative' }
+    }
+  },
+  {
+    name: 'Distribution',
+    icon: '🔔',
+    markType: 'bar',
+    description: 'Visualize value distributions (histogram)',
+    encodings: {
+      x: { type: 'quantitative', bin: true },
+      y: { type: 'quantitative', aggregate: 'count' }
+    }
+  }
+]; 

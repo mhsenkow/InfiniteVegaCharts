@@ -535,4 +535,4 @@ const detectSeasonality = (timeField: string, valueField: string, values: any[])
   }
   
   return signChanges > (sorted.length / 4); // Arbitrary threshold
-}; 
+};
