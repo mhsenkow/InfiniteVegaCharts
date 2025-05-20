@@ -24,7 +24,26 @@ const DatasetList = styled.div`
   gap: 8px;
 `
 
-const DatasetCard = styled.button<{ $active: boolean }>`
+const DatasetCard = styled.div<{ $active: boolean }>`
+  width: 100%;
+  padding: 12px;
+  background: white;
+  border: 2px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  &:hover {
+    border-color: ${props => props.theme.colors.primary};
+    background: ${props => props.$active ? 'white' : '#f8f9fa'};
+  }
+`
+
+const DatasetCardButton = styled.button<{ $active: boolean }>`
   width: 100%;
   padding: 12px;
   background: white;
@@ -129,10 +148,10 @@ const EmptyState = styled.div`
 interface DatasetSelectorProps {
   chartId: string;
   currentDataset: string;
-  onSelect: (datasetId: string) => void;
+  onSelect: (datasetId: any) => void;
   allowUpload?: boolean;
-  datasetCache: Record<string, DatasetMetadata>;
-  setDatasetCache: (cache: Record<string, DatasetMetadata>) => void;
+  datasetCache?: Record<string, DatasetMetadata>;
+  setDatasetCache?: (cache: Record<string, DatasetMetadata>) => void;
 }
 
 export const DatasetSelector = ({ 
@@ -180,20 +199,7 @@ export const DatasetSelector = ({
 
   const handleSelect = async (dataset: DatasetMetadata | string) => {
     try {
-      // If it's a sample dataset (string ID)
-      if (typeof dataset === 'string') {
-        const sampleDataset = sampleDatasets[dataset];
-        if (sampleDataset) {
-          onSelect({
-            id: dataset,
-            ...sampleDataset
-          });
-          return;
-        }
-      } else {
-        // It's an uploaded dataset
-        onSelect(dataset);
-      }
+      onSelect(dataset);
     } catch (error) {
       console.error('Error selecting dataset:', error);
     }
@@ -251,7 +257,7 @@ export const DatasetSelector = ({
       <TabPanel $active={activeTab === 0}>
         <DatasetList>
           {Object.entries(sampleDatasets).map(([id, dataset]) => (
-            <DatasetCard
+            <DatasetCardButton
               key={id}
               $active={currentDataset === id}
               onClick={() => handleSelect(id)}
@@ -261,7 +267,7 @@ export const DatasetSelector = ({
               <DatasetMeta>
                 <Badge>Sample</Badge>
               </DatasetMeta>
-            </DatasetCard>
+            </DatasetCardButton>
           ))}
         </DatasetList>
       </TabPanel>
@@ -287,7 +293,7 @@ export const DatasetSelector = ({
                   <DatasetContent onClick={() => handleSelect(dataset)}>
                     <DatasetName>{dataset.name}</DatasetName>
                     <DatasetDescription>
-                      {dataset.rowCount} rows, {dataset.columnCount} columns
+                      {dataset.columns?.length || 0} columns
                     </DatasetDescription>
                     <DatasetMeta>
                       <Badge>Upload</Badge>
@@ -296,7 +302,12 @@ export const DatasetSelector = ({
                       )}
                     </DatasetMeta>
                   </DatasetContent>
-                  <DeleteButton onClick={() => handleDelete(dataset.id)}>
+                  <DeleteButton onClick={(e) => {
+                    e.stopPropagation();
+                    if (dataset.id) {
+                      handleDelete(dataset.id);
+                    }
+                  }}>
                     <TrashIcon />
                   </DeleteButton>
                 </DatasetCard>

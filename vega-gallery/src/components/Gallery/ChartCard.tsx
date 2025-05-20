@@ -17,21 +17,33 @@ interface ChartCardProps {
   onClick: (id: string) => void;
 }
 
-const CardContent = memo(({ title, description, category, complexity }: {
-  title: string;
-  description: string;
-  category: string;
-  complexity: string;
-}) => (
-  <Content>
-    <Title>{title}</Title>
-    <Description>{description}</Description>
-    <BadgeContainer>
-      <Badge>{category}</Badge>
-      <Badge>{complexity}</Badge>
-    </BadgeContainer>
-  </Content>
-));
+const CardContent = memo(
+  ({ title, description, category, complexity }: {
+    title: string;
+    description: string;
+    category: string;
+    complexity: string;
+  }) => (
+    <Content>
+      <Title>{title}</Title>
+      <Description>{description}</Description>
+      <BadgeContainer>
+        <Badge>{category}</Badge>
+        <Badge>{complexity}</Badge>
+      </BadgeContainer>
+    </Content>
+  ),
+  (prevProps, nextProps) => {
+    return (
+      prevProps.title === nextProps.title &&
+      prevProps.description === nextProps.description &&
+      prevProps.category === nextProps.category &&
+      prevProps.complexity === nextProps.complexity
+    );
+  }
+);
+
+CardContent.displayName = 'CardContent';
 
 export default memo(function ChartCard({ chart, onClick }: ChartCardProps) {
   const chartRef = useRef<HTMLDivElement>(null);
@@ -64,16 +76,27 @@ export default memo(function ChartCard({ chart, onClick }: ChartCardProps) {
   const renderChart = useCallback(async () => {
     if (!chartRef.current) return;
     
-    const spec = chartSpecs[chart.id];
+    // Use explicit type checking to satisfy TypeScript
+    const chartId = chart.id as keyof typeof chartSpecs;
+    const spec = chartSpecs[chartId];
     if (!spec) return;
 
     try {
-      await renderVegaLite(chartRef.current, {
-        ...spec,
-        width: 'container',
-        height: 'container',
-        autosize: { type: 'fit', contains: 'padding' }
-      }, { mode: 'gallery' });
+      // Check if this is a Vega spec rather than Vega-Lite
+      const isVegaSpec = !!(spec.$schema && spec.$schema.includes('vega.github.io/schema/vega'));
+      
+      // Apply container sizing only to Vega-Lite specs, as Vega specs have their own sizing
+      const specToRender = isVegaSpec ? 
+        spec : 
+        {
+          ...spec,
+          width: 'container',
+          height: 'container',
+          autosize: { type: 'fit', contains: 'padding' }
+        };
+      
+      // Use a type assertion to handle both Vega and Vega-Lite specs
+      await renderVegaLite(chartRef.current, specToRender as any, { mode: 'gallery' });
     } catch (error) {
       console.error(`Failed to render chart ${chart.id}:`, error);
     }

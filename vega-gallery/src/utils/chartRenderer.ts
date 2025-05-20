@@ -183,6 +183,26 @@ export const renderVegaLite = async (
   options: RenderOptions = {}
 ) => {
   try {
+    // Check if the spec is a Vega (not Vega-Lite) spec
+    const isVegaSpec = !!(spec.$schema && spec.$schema.includes('vega.github.io/schema/vega'));
+    
+    if (isVegaSpec) {
+      // If it's a Vega spec, just render it directly
+      const embedOptions: EmbedOptions = {
+        renderer: 'svg',
+        actions: false
+      };
+      
+      // Cast the spec to any to bypass type checking for Vega vs Vega-Lite
+      await vegaEmbed(element, spec as any, embedOptions);
+      
+      if (options.style) {
+        applyVisualEffectsToSVG(element, options.style);
+      }
+      
+      return;
+    }
+    
     // Helper to determine if mark should be filled
     const shouldFillMark = (markType: string) => {
       const filledMarks = ['bar', 'arc', 'area', 'rect', 'square'];
