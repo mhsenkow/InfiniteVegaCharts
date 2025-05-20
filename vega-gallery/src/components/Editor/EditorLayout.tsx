@@ -13,6 +13,7 @@ import { TopLevelSpec } from 'vega-lite'
 import BrushIcon from '@mui/icons-material/Brush';
 import TuneIcon from '@mui/icons-material/Tune';
 import CodeIcon from '@mui/icons-material/Code';
+import { ExtendedSpec } from '../../types/vega';
 
 const Container = styled.div`
   display: grid;
@@ -148,6 +149,7 @@ export const EditorLayout = ({ chartId, onBack }: EditorLayoutProps) => {
   });
   const [mode, setMode] = useState<'visual' | 'style' | 'code'>('visual')
   const [dataset, setDataset] = useState<DatasetMetadata | null>(null)
+  const [chartRenderKey, setChartRenderKey] = useState(0);
 
   const handleVisualChange = (updates: Partial<ExtendedSpec>) => {
     // Ensure mark configurations are properly serialized
@@ -183,6 +185,25 @@ export const EditorLayout = ({ chartId, onBack }: EditorLayoutProps) => {
     setSpec(JSON.stringify(serializedSpec, null, 2));
   }
 
+  const updateChartRender = () => {
+    console.log('Updating chart render key from:', chartRenderKey);
+    setChartRenderKey(prev => prev + 1);
+  };
+
+  useEffect(() => {
+    try {
+      const parsedSpec = JSON.parse(spec);
+      if (parsedSpec && Object.keys(parsedSpec).length > 0) {
+        const timeoutId = setTimeout(() => {
+          updateChartRender();
+        }, 10);
+        return () => clearTimeout(timeoutId);
+      }
+    } catch (e) {
+      console.error('Invalid spec:', e);
+    }
+  }, [spec]);
+
   return (
     <div>
       <BackButton onClick={onBack}>Back to Gallery</BackButton>
@@ -213,10 +234,12 @@ export const EditorLayout = ({ chartId, onBack }: EditorLayoutProps) => {
           </TabContainer>
 
           {mode === 'visual' && dataset && (
-            <DataCurationPanel 
-              dataset={dataset}
-              onDatasetUpdate={setDataset}
-            />
+            <ErrorBoundary>
+              <DataCurationPanel 
+                dataset={dataset}
+                onDatasetUpdate={setDataset}
+              />
+            </ErrorBoundary>
           )}
 
           <ErrorBoundary>
@@ -225,14 +248,23 @@ export const EditorLayout = ({ chartId, onBack }: EditorLayoutProps) => {
             ) : mode === 'style' ? (
               <StyleEditor spec={JSON.parse(spec)} onChange={handleVisualChange} />
             ) : (
-              <VisualEditor spec={JSON.parse(spec)} onChange={handleVisualChange} />
+              <ErrorBoundary>
+                <VisualEditor
+                  spec={JSON.parse(spec) as ExtendedSpec}
+                  onChange={handleVisualChange}
+                  onChartRender={updateChartRender}
+                />
+              </ErrorBoundary>
             )}
           </ErrorBoundary>
         </EditorPanel>
         <PreviewPanel>
           <ErrorBoundary>
             <PreviewContent>
-              <Preview spec={spec} />
+              <Preview 
+                spec={spec} 
+                renderKey={chartRenderKey} 
+              />
             </PreviewContent>
           </ErrorBoundary>
         </PreviewPanel>

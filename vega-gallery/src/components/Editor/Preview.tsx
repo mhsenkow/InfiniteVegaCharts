@@ -4,6 +4,7 @@ import { renderVegaLite } from '../../utils/chartRenderer'
 import { ChartFooter } from './ChartFooter'
 import { TopLevelSpec } from 'vega-lite'
 import DownloadIcon from '@mui/icons-material/Download'
+import { ExtendedSpec } from '../../types/vega'
 
 const PreviewContainer = styled.div`
   display: flex;
@@ -194,10 +195,11 @@ const DownloadOption = styled.button`
 `;
 
 interface PreviewProps {
-  spec: string | TopLevelSpec;
+  spec: string | TopLevelSpec | ExtendedSpec;
+  renderKey?: number;
 }
 
-export const Preview = ({ spec }: PreviewProps) => {
+export const Preview = ({ spec, renderKey = 0 }: PreviewProps) => {
   const chartRef = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [sampleSize, setSampleSize] = useState(10)
@@ -208,30 +210,18 @@ export const Preview = ({ spec }: PreviewProps) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
 
-  // Sample the data
-  const sampledSpec = useMemo(() => {
+  // Fix the type issues in parsedSpec creation
+  const parsedSpec = useMemo(() => {
     if (typeof spec === 'string') {
       try {
-        spec = JSON.parse(spec);
+        return JSON.parse(spec);
       } catch (e) {
-        return spec;
+        console.error('Failed to parse spec:', e);
+        return { data: { values: [] } };
       }
     }
-
-    const values = spec?.data?.values || [];
-    if (!values.length) return spec;
-
-    const sampleCount = Math.max(1, Math.floor(values.length * (sampleSize / 100)));
-    const sampledValues = values.slice(0, sampleCount);
-
-    return {
-      ...spec,
-      data: {
-        ...spec.data,
-        values: sampledValues
-      }
-    };
-  }, [spec, sampleSize]);
+    return spec;
+  }, [spec]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true)
@@ -272,33 +262,50 @@ export const Preview = ({ spec }: PreviewProps) => {
     }
   }, [isDragging])
 
+  // Update the renderChart function to safely access properties
   const renderChart = useCallback(async () => {
     if (!chartRef.current) return;
     
     try {
       // Force a clean render by removing previous chart
-      chartRef.current.innerHTML = '<div style="width: 100%; height: 100%;"></div>';
+      chartRef.current.innerHTML = `<div style="width: 100%; height: 100%;" key="${renderKey}"></div>`;
       
-      await renderVegaLite(chartRef.current, {
-        ...sampledSpec,
+      // Create a safely typed spec for rendering
+      const renderSpec = {
+        ...parsedSpec,
         width: 'container',
         height: 'container',
         autosize: {
           type: 'fit',
           contains: 'padding'
+        },
+        // Add the renderKey as a config property to force new Vega-Lite view creation
+        config: {
+          ...(parsedSpec.config || {}),
+          _forceNewView: renderKey // This will cause Vega to create a new View
         }
-      });
+      };
+      
+      await renderVegaLite(chartRef.current, renderSpec);
       setError(null);
     } catch (err) {
       console.error('Error rendering chart:', err);
       setError(err instanceof Error ? err.message : 'Failed to render chart');
     }
-  }, [sampledSpec]);
+  }, [parsedSpec, renderKey]);
 
-  // Add an effect to trigger render when sample size changes
+  // Ensure renderChart is called whenever renderKey changes
+  useEffect(() => {
+    if (renderKey > 0) {
+      console.log('Rendering chart with key:', renderKey);
+      renderChart();
+    }
+  }, [renderKey, renderChart]);
+
+  // Add renderKey to dependencies for the original effect 
   useEffect(() => {
     renderChart();
-  }, [sampleSize, renderChart]);
+  }, [sampleSize, renderKey, renderChart]);
 
   // Handle resize
   useEffect(() => {
@@ -464,8 +471,8 @@ export const Preview = ({ spec }: PreviewProps) => {
       )}
       <DataContainer>
         <ChartFooter 
-          data={sampledSpec.data.values}
-          spec={sampledSpec}
+          data={parsedSpec.data.values}
+          spec={parsedSpec}
           sampleSize={sampleSize}
           onSampleSizeChange={setSampleSize}
         />

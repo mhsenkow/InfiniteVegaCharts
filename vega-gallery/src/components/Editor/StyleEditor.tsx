@@ -1,12 +1,16 @@
 import styled from 'styled-components'
 import { TopLevelSpec } from 'vega-lite'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { ExtendedSpec, VegaMarkConfig } from '../../types/vega'
 import { ChartStyle } from '../../types/chart'
 import FormatSizeIcon from '@mui/icons-material/FormatSize';
 import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
 import BorderStyleIcon from '@mui/icons-material/BorderStyle';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import { Color, ColorPicker } from 'mui-color'
+import { Slider, TextField, MenuItem } from '@mui/material'
+import { SketchPicker } from 'react-color'
+import { themeColors, setMarkColors, getFromSpec } from '../../utils/themeUtils'
 
 const Container = styled.div`
   padding: 16px;
@@ -130,6 +134,7 @@ const ScalePreview = styled.div<{ $scale: number }>`
   .small { font-size: ${props => 0.875 * props.$scale}rem; }
 `;
 
+// Component interface
 interface StyleEditorProps {
   spec: ExtendedSpec;
   onChange: (updates: Partial<ExtendedSpec>) => void;

@@ -7,6 +7,16 @@ import CloudIcon from '@mui/icons-material/Cloud';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { DatasetMetadata } from '../../types/dataset';
 
+// Import pdf-parse for PDF processing when in Electron environment
+declare global {
+  interface Window {
+    electron?: {
+      isElectron: boolean;
+      processPdf: (filePath: string) => Promise<string>;
+    };
+  }
+}
+
 const Container = styled.div`
   background: white;
   border-radius: 8px;
@@ -63,31 +73,34 @@ const TabPanel = styled.div<{ $visible: boolean }>`
 `;
 
 const ResultPreview = styled.pre`
-  background: #f8f9fa;
-  padding: 16px;
-  border-radius: 8px;
-  overflow: auto;
   max-height: 300px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.9rem;
-  margin-top: 16px;
+  overflow: auto;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid ${props => props.theme.colors.border};
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  word-break: break-word;
 `;
 
 const ErrorMessage = styled.div`
-  color: #dc3545;
-  background-color: #f8d7da;
-  padding: 12px;
+  color: red;
+  margin: 16px 0;
+  padding: 8px 16px;
+  background: #ffebee;
   border-radius: 4px;
-  margin-bottom: 16px;
+  border-left: 4px solid #f44336;
 `;
 
 const StatusMessage = styled.div`
-  margin-top: 12px;
+  margin-top: 8px;
   color: ${props => props.theme.text.secondary};
+  font-size: 0.9rem;
 `;
 
 const CloudApiKeyInput = styled.div`
-  margin: 16px 0;
+  margin-bottom: 16px;
   
   input {
     width: 100%;
@@ -114,6 +127,7 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [cloudApiKey, setCloudApiKey] = useState<string>('');
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [isPdf, setIsPdf] = useState<boolean>(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -138,13 +152,20 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
     }
     
     setImage(file);
+    setIsPdf(file.type === 'application/pdf');
     
-    // Create preview URL
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreviewUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    // Create preview URL (for images only)
+    if (file.type !== 'application/pdf') {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // For PDFs, just show a placeholder or PDF icon
+      setImagePreviewUrl(null);
+      setStatusMessage('PDF file loaded. Ready for processing.');
+    }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -176,8 +197,72 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
     setExtractionMethod(newValue);
   };
 
+  // Process PDF content locally using pdf-parse via Electron's Node.js integration
+  const processPdfLocally = async () => {
+    if (!image || !isPdf) return;
+    
+    setIsProcessing(true);
+    setStatusMessage('Processing PDF content...');
+    setProgress(10);
+    
+    try {
+      // Check if running in Electron environment
+      const isElectron = window.electron?.isElectron;
+      
+      let pdfText = '';
+      
+      if (isElectron) {
+        // If we're in Electron, we'll use the exposed API to process the PDF
+        setStatusMessage('Processing PDF with Node.js (Electron)...');
+        
+        // Create a temporary file path
+        const filePath = URL.createObjectURL(image);
+        
+        // Use the Electron bridge to process the PDF with pdf-parse
+        pdfText = await window.electron.processPdf(filePath);
+      } else {
+        // If we're in the browser, we need to use a Web Worker
+        setStatusMessage('Processing PDF in browser...');
+        
+        // Use dynamic import to load pdf-parse in browser context
+        const pdfParse = await import('pdf-parse');
+        
+        // Read the file as ArrayBuffer
+        const arrayBuffer = await image.arrayBuffer();
+        
+        // Parse the PDF content
+        const data = await pdfParse.default(new Uint8Array(arrayBuffer));
+        pdfText = data.text;
+      }
+      
+      setProgress(80);
+      setExtractedText(pdfText);
+      
+      // Try to convert the text to structured data
+      const parsedData = parseExtractedText(pdfText);
+      setExtractedData(parsedData);
+      
+      if (parsedData && parsedData.length > 0) {
+        createDataset(parsedData);
+      }
+      
+      setProgress(100);
+    } catch (err) {
+      console.error('PDF processing error:', err);
+      setError(`Error processing PDF: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const processWithTesseract = async () => {
     if (!image) return;
+    
+    // If it's a PDF, use PDF-specific processing
+    if (isPdf) {
+      await processPdfLocally();
+      return;
+    }
     
     setIsProcessing(true);
     setStatusMessage('Initializing OCR engine...');
@@ -377,11 +462,11 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
     
     const newDataset: DatasetMetadata = {
       id: `ocr-${Date.now()}`,
-      name: image ? `OCR from ${image.name}` : 'Extracted Data',
-      description: 'Data extracted from image using OCR',
+      name: image ? `${isPdf ? 'PDF' : 'OCR'} from ${image.name}` : 'Extracted Data',
+      description: `Data extracted from ${isPdf ? 'PDF document' : 'image'} using ${extractionMethod === 0 ? (isPdf ? 'pdf-parse' : 'Tesseract OCR') : 'Cloud Vision API'}`,
       values: data,
       dataTypes,
-      source: extractionMethod === 0 ? 'Tesseract OCR' : 'Cloud Vision API',
+      source: isPdf ? 'PDF Document' : (extractionMethod === 0 ? 'Tesseract OCR' : 'Cloud Vision API'),
       uploadDate: new Date().toISOString(),
       rowCount,
       columnCount,
@@ -400,9 +485,9 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
   
   return (
     <Container>
-      <Typography variant="h5" gutterBottom>Extract Data from Images</Typography>
+      <Typography variant="h5" gutterBottom>Extract Data from Images & PDFs</Typography>
       <Typography variant="body1" color="textSecondary" paragraph>
-        Upload an image containing tabular data, charts, or text, and we'll extract the data for visualization.
+        Upload an image or PDF containing tabular data, charts, or text, and we'll extract the data for visualization.
       </Typography>
       
       <ImageUploadArea 
@@ -420,7 +505,7 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
           onChange={handleFileSelect}
         />
         <ImageIcon style={{ fontSize: 48, color: '#6c757d', marginBottom: 16 }} />
-        <Typography variant="h6">Drop image here or click to browse</Typography>
+        <Typography variant="h6">Drop image or PDF here or click to browse</Typography>
         <Typography variant="body2" color="textSecondary">
           Supports JPEG, PNG, GIF and PDF files (max 10MB)
         </Typography>
@@ -430,6 +515,15 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
         <ImagePreview>
           <img src={imagePreviewUrl} alt="Preview" />
         </ImagePreview>
+      )}
+      
+      {isPdf && !imagePreviewUrl && image && (
+        <Box sx={{ textAlign: 'center', my: 2, p: 2, bgcolor: 'rgba(0,0,0,0.03)', borderRadius: 1 }}>
+          <Typography variant="subtitle1">PDF loaded: {image.name}</Typography>
+          <Typography variant="caption" color="textSecondary">
+            Size: {(image.size / 1024).toFixed(1)} KB
+          </Typography>
+        </Box>
       )}
       
       {error && <ErrorMessage>{error}</ErrorMessage>}
@@ -444,7 +538,7 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
           >
             <Tab 
               icon={<TableChartIcon />} 
-              label="Tesseract OCR" 
+              label={isPdf ? "Local PDF Processing" : "Tesseract OCR"} 
               iconPosition="start"
             />
             <Tab 
@@ -456,8 +550,10 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
           
           <TabPanel $visible={extractionMethod === 0}>
             <Typography variant="body2" paragraph>
-              Extract data using Tesseract.js, a pure JavaScript OCR engine that runs entirely in your browser. 
-              Best for simple tables and text.
+              {isPdf ? 
+                "Extract data from PDF using local PDF parsing. This processes PDF text content directly without OCR." :
+                "Extract data using Tesseract.js, a pure JavaScript OCR engine that runs entirely in your browser. Best for simple tables and text."
+              }
             </Typography>
             <ButtonContainer>
               <Button 
@@ -467,7 +563,7 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
                 disabled={isProcessing || !image}
                 startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : undefined}
               >
-                {isProcessing ? 'Processing...' : 'Extract Data'}
+                {isProcessing ? 'Processing...' : isPdf ? 'Extract PDF Data' : 'Extract Data'}
               </Button>
             </ButtonContainer>
           </TabPanel>

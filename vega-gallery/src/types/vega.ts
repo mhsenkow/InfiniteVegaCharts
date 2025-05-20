@@ -1,4 +1,4 @@
-import { TopLevelSpec } from 'vega-lite'
+import { TopLevelSpec, Config as VegaLiteConfig } from 'vega-lite'
 import { DatasetMetadata } from './dataset'
 
 export type EncodingChannel = 
@@ -6,7 +6,8 @@ export type EncodingChannel =
   | 'strokeWidth' | 'shape' | 'text' | 'angle'
   | 'theta' | 'radius' | 'x2' | 'y2'
   | 'url' | 'width' | 'height' | 'order'
-  | 'dimensions' | 'detail' | 'density' | 'bandwidth';
+  | 'dimensions' | 'detail' | 'density' | 'bandwidth'
+  | 'column' | 'row' | 'facet' | 'key' | 'href';
 export type MarkType = 
   | 'bar' 
   | 'line' 
@@ -75,6 +76,10 @@ export interface ChartEncoding {
 // First, let's extend our Vega spec type to include all possible properties
 export interface VegaMarkConfig {
   // Common mark properties
+  type?: MarkType;
+  tooltip?: boolean | object;
+  point?: boolean;
+  filled?: boolean;
   fill?: string;
   fillOpacity?: number;
   stroke?: string;
@@ -94,6 +99,7 @@ export interface VegaMarkConfig {
   // Line properties
   interpolate?: 'linear' | 'step' | 'stepAfter' | 'stepBefore' | 'basis' | 'cardinal' | 'monotone';
   tension?: number;
+  line?: boolean; // For area charts
   
   // Point/Circle properties
   shape?: string;
@@ -113,11 +119,12 @@ export interface VegaMarkConfig {
   innerRadius?: number;
   outerRadius?: number;
   padAngle?: number;
+  theta?: any; // For arc/pie charts
+  radius?: any; // For arc/pie charts
   
   // Effects
   cursor?: string;
   href?: string;
-  tooltip?: boolean | object;
   blend?: string;
 
   // Advanced fill options
@@ -209,12 +216,39 @@ export interface VegaMarkConfig {
   blendMode?: 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten';
 }
 
-export interface ExtendedSpec extends Omit<TopLevelSpec, 'mark'> {
-  mark?: {
+export interface ExtendedSpec extends Omit<TopLevelSpec, 'mark' | 'config'> {
+  mark?: MarkType | {
     type: MarkType;
+    // Common properties
     tooltip?: boolean;
     point?: boolean;
+    filled?: boolean;
+    size?: number;
+    shape?: string;
+    stroke?: string;
+    strokeWidth?: number;
+    opacity?: number;
+    
+    // Line specific
+    interpolate?: 'linear' | 'step' | 'stepAfter' | 'stepBefore' | 'basis' | 'cardinal' | 'monotone';
+    line?: boolean; // For area marks
+    
+    // Bar specific
+    cornerRadius?: number;
+    orient?: 'vertical' | 'horizontal';
+    
+    // Arc specific
+    innerRadius?: number;
+    outerRadius?: number;
+    
+    // Any other properties
     [key: string]: unknown;
+  };
+  
+  // Add support for _renderKey to help force re-renders
+  config?: VegaLiteConfig & {
+    _renderKey?: number;
+    _forceNewView?: number;
   };
 }
 

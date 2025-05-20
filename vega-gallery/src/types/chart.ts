@@ -83,3 +83,30 @@ export interface ChartDefinition extends ChartMetadata {
   spec: any; // Vega-Lite specification
   data?: any; // Optional data if not embedded in spec
 }
+
+export type ChartType = 
+  | 'point' 
+  | 'line' 
+  | 'area' 
+  | 'bar' 
+  | 'boxplot' 
+  | 'violin' 
+  | 'heatmap' 
+  | 'arc' 
+  | 'treemap';
+
+export interface EncodingField {
+  field: string;
+  type: string;
+  aggregate?: string;
+  scale?: any;
+  bin?: boolean;
+  point?: boolean;
+  sort?: string | object;
+  title?: string;
+  format?: string;
+  stack?: boolean | string;
+}
+
+// Add support for tooltip arrays
+export type TooltipEncoding = EncodingField | EncodingField[];

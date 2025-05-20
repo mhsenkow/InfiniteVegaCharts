@@ -21,6 +21,8 @@ import AutoGraphIcon from '@mui/icons-material/AutoGraph'
 import RecommendIcon from '@mui/icons-material/Recommend'
 import { detectDataTypes } from '../../utils/dataUtils'
 import { initDB, getDataset } from '../../utils/indexedDB'
+import { ExtendedSpec as VegaExtendedSpec } from '../../types/vega'
+import { transformEncodings, createMarkConfig } from '../../utils/specUtils'
 
 const Container = styled.div`
   padding: 16px;
@@ -481,27 +483,10 @@ interface DataTransform {
   test?: (d: any) => boolean;
 }
 
-interface ExtendedSpec extends TopLevelSpec {
-  mark?: string | {
-    type: string;
-    [key: string]: any;
-  };
-  encoding?: {
-    [key: string]: {
-      field?: string;
-      type?: string;
-      [key: string]: any;
-    };
-  };
-  data?: {
-    values?: any[];
-    [key: string]: any;
-  };
-}
-
 interface VisualEditorProps {
-  spec: ExtendedSpec;
-  onChange: (updates: Partial<ExtendedSpec>) => void;
+  spec: VegaExtendedSpec;
+  onChange: (updates: Partial<VegaExtendedSpec>) => void;
+  onChartRender?: () => void;
 }
 
 // Add mark-specific encoding definitions
@@ -669,7 +654,7 @@ const getMarkType = (spec: any): MarkType => {
   return 'point';
 };
 
-export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
+export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProps) => {
   // Add state for dataset cache
   const [datasetCache, setDatasetCache] = useState<Record<string, DatasetMetadata>>({});
   const [currentDataset, setCurrentDataset] = useState<string | null>(null);
@@ -1227,31 +1212,74 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
   const handleRecommendEncodings = () => {
     if (!spec.data?.values?.length) return;
 
+    // Get clean data and correct data types for better recommendations
+    const dataValues = spec.data.values;
+    const dataTypes = inferDataTypes(dataValues);
+    
+    // Create a properly formatted dataset for recommendations
     const dataset = {
-      values: spec.data.values,
-      dataTypes: inferDataTypes(spec.data.values)
+      values: dataValues,
+      dataTypes: Object.entries(dataTypes).reduce((acc, [field, types]) => {
+        // Choose the most appropriate type from the inferred types
+        acc[field] = types[0]; // Take the first inferred type
+        return acc;
+      }, {})
     };
 
+    console.log('Getting recommendations for dataset:', dataset);
     const recs = getChartRecommendations(dataset);
+    console.log('Received recommendations:', recs);
     setRecommendations(recs);
   };
 
   const applyRecommendation = (recommendation) => {
+    // Add debug log
+    console.log('Applying recommendation:', recommendation);
+    
+    // Update the current mark type
+    setCurrentMark(recommendation.chartType);
+    
+    // Process the encodings using our utility function
+    const newEncodings = transformEncodings(recommendation.suggestedEncodings);
+    
+    // Update encodings state
+    setEncodings(newEncodings);
+    
+    // Create a new spec object with the new mark type and encodings
     const newSpec = {
       ...spec,
-      mark: recommendation.chartType,
-      encoding: Object.entries(recommendation.suggestedEncodings).reduce((acc, [channel, config]) => ({
-        ...acc,
-        [channel]: {
-          field: config.field,
-          type: config.type,
-          ...(config.aggregate && { aggregate: config.aggregate }),
-          ...(config.scale && { scale: config.scale })
-        }
-      }), {})
+      mark: createMarkConfig(recommendation.chartType),
+      encoding: newEncodings
     };
 
+    // Apply the changes
     onChange(newSpec);
+    
+    // Force a complete re-render immediately 
+    if (onChartRender) {
+      onChartRender();
+    }
+    
+    // Apply a second update after a short delay to ensure the chart refreshes properly
+    setTimeout(() => {
+      // Create a slightly modified copy of the spec to force a re-render
+      const refreshedSpec = {
+        ...newSpec,
+        width: newSpec.width || undefined, // Trigger width recalculation
+        height: newSpec.height || undefined, // Trigger height recalculation
+        // Add a renderKey to force Vega-Lite to create a new View
+        config: {
+          ...(newSpec.config || {}),
+          _renderKey: Date.now() // Add a unique render key
+        }
+      };
+      onChange(refreshedSpec);
+      
+      // Notify parent to update chart render key
+      if (onChartRender) {
+        onChartRender();
+      }
+    }, 50);
   };
 
   // Detect field types
@@ -1452,7 +1480,14 @@ export const VisualEditor = ({ spec, onChange }: VisualEditorProps) => {
                     </RecommendationReason>
                     <div style={{ fontSize: '0.9rem' }}>
                       Suggested encodings: {Object.entries(rec.suggestedEncodings)
-                        .map(([channel, field]) => `${channel}=${field}`)
+                        .map(([channel, enc]) => {
+                          if (Array.isArray(enc)) {
+                            return `${channel}: [Array of ${enc.length} fields]`;
+                          } else if (enc && typeof enc === 'object' && 'field' in enc && 'type' in enc) {
+                            return `${channel}: ${enc.field} (${enc.type})`;
+                          }
+                          return `${channel}: [${typeof enc}]`;
+                        })
                         .join(', ')}
                     </div>
                   </RecommendationCard>
