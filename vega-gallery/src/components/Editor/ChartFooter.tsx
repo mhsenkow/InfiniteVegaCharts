@@ -3,12 +3,12 @@ import styled from 'styled-components';
 import { TablePagination } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { TopLevelSpec } from 'vega-lite';
 
 const FooterContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
+  margin-top: 20px;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
 `;
 
 const ToggleButton = styled.button<{ $isOpen: boolean }>`
@@ -209,44 +209,58 @@ const DataSummary = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #eee;
+  margin-bottom: 16px;
 `;
 
 const SummaryText = styled.div`
   font-size: 0.9rem;
-  color: #495057;
+  color: ${props => props.theme.text.secondary};
 `;
 
 const ViewDataButton = styled.button`
   padding: 6px 12px;
   background: white;
-  border: 1px solid #ddd;
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
   cursor: pointer;
-  &:hover { background: #f1f3f5; }
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: ${props => props.theme.colors.primary};
+  }
+`;
+
+const DataTableContainer = styled.div`
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0;
+  padding: 16px;
+  background: white;
+  border-top: 1px solid #eee;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 `;
 
 const DataTable = styled.table`
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
-
+  
   th, td {
-    padding: 6px 12px;
+    padding: 8px 12px;
     text-align: left;
     border-bottom: 1px solid #eee;
-    white-space: nowrap;
   }
-
+  
   th {
+    background: #f8f9fa;
+    font-weight: 500;
     position: sticky;
     top: 0;
-    background: #f8f9fa;
     z-index: 1;
   }
-
+  
   tbody tr:hover {
     background: #f8f9fa;
   }
@@ -281,79 +295,56 @@ const ColumnType = styled.span`
   color: #495057;
 `;
 
-const DataTableContainer = styled.div`
-  max-width: 100%;
-  overflow-x: auto;
-  margin: 16px 0;
-`;
-
-const SampleOption = styled.div<{ $active: boolean }>`
-  padding: 6px 12px;
-  background: ${props => props.$active ? props.theme.colors.primary : 'white'};
-  color: ${props => props.$active ? 'white' : props.theme.text.primary};
-  border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
-  border-radius: 4px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: ${props => props.theme.colors.primary};
-  }
-`;
-
 const SamplingContainer = styled.div`
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
-  padding: 12px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #eee;
-`;
-
-const ColumnInput = styled.input`
-  width: 80px;
-  padding: 6px 12px;
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
+  margin-bottom: 16px;
+  align-items: center;
   font-size: 0.9rem;
+  color: ${props => props.theme.text.secondary};
 `;
 
-const ColumnControls = styled.div`
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 12px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #eee;
+const SampleOption = styled.span<{ $active: boolean }>`
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: ${props => props.$active ? props.theme.colors.primary : 'transparent'};
+  color: ${props => props.$active ? 'white' : props.theme.text.secondary};
+  font-size: 0.8rem;
+  
+  &:hover {
+    background: ${props => props.$active ? props.theme.colors.primary : '#f1f3f5'};
+  }
 `;
 
-const ColumnToggle = styled.button<{ $active: boolean }>`
+const Pagination = styled.div`
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: flex-end;
+  margin-top: 16px;
+  gap: 8px;
+`;
+
+const PageButton = styled.button`
   padding: 4px 8px;
-  border: 1px solid ${props => props.$active ? props.theme.colors.primary : '#ddd'};
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
-  background: ${props => props.$active ? `${props.theme.colors.primary}10` : 'white'};
-  color: ${props => props.$active ? props.theme.colors.primary : props.theme.text.primary};
-  font-size: 0.9rem;
+  background: white;
   cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.$active ? `${props.theme.colors.primary}20` : '#f8f9fa'};
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
-
-  svg {
-    font-size: 16px;
+  
+  &:hover:not(:disabled) {
+    border-color: ${props => props.theme.colors.primary};
   }
 `;
 
 interface ChartFooterProps {
-  data: any;
-  spec: any;
+  data?: any[] | null;
+  spec?: TopLevelSpec | null;
   sampleSize: number;
   onSampleSizeChange: (size: number) => void;
 }
@@ -363,67 +354,58 @@ export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: Char
   console.log('ChartFooter data:', data);
   console.log('ChartFooter spec:', spec);
 
-  const [showDataTable, setShowDataTable] = useState(false);
+  const [showDataTable, setShowDataTable] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   // Add state for visible columns
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
 
-  // Get columns and sample data
-  const { columns, sampledData } = useMemo(() => {
-    // Handle both data formats
-    const values = Array.isArray(data) ? data : spec?.data?.values || [];
-    if (!values.length) {
-      return { columns: [], sampledData: [] };
+  // Determine the data to show
+  const rawData = data || (spec?.data && 'values' in spec.data ? spec.data.values : []) || [];
+  const isArray = Array.isArray(rawData);
+  
+  // Create a safe array of objects for display
+  const safeData = isArray ? rawData : [];
+  
+  // Determine all possible columns
+  const allColumns = safeData.length > 0 
+    ? Object.keys(safeData[0] || {})
+    : [];
+  
+  // Initialize visible columns if not already set
+  useEffect(() => {
+    if (allColumns.length > 0 && visibleColumns.size === 0) {
+      setVisibleColumns(new Set(allColumns));
     }
-
-    const cols = Object.keys(values[0]).filter(key => !key.startsWith('Symbol'));
-    const totalRows = values.length;
-    const sampleCount = Math.max(1, Math.floor(totalRows * (sampleSize / 100)));
-    const sampled = values.slice(0, sampleCount);
-
-    // Initialize visible columns if empty
-    if (visibleColumns.size === 0) {
-      setVisibleColumns(new Set(cols));
-    }
-
-    return { columns: cols, sampledData: sampled };
-  }, [data, spec, sampleSize]);
-
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const toggleColumn = (column: string) => {
-    setVisibleColumns(prev => {
-      const next = new Set(prev);
-      if (next.has(column)) {
-        next.delete(column);
-      } else {
-        next.add(column);
-      }
-      return next;
-    });
-  };
-
-  const toggleAllColumns = () => {
-    if (visibleColumns.size === columns.length) {
-      setVisibleColumns(new Set());
-    } else {
-      setVisibleColumns(new Set(columns));
-    }
-  };
+  }, [allColumns, visibleColumns]);
+  
+  // Get the columns to display
+  const columns = Array.from(visibleColumns).filter(col => allColumns.includes(col));
+  
+  // Apply sampling to the data
+  const sampledData = safeData.slice(0, Math.min(sampleSize, safeData.length));
+  
+  // Apply pagination
+  const paginatedData = sampledData.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   return (
     <FooterContainer>
       <DataSummary>
         <SummaryText>
-          {(Array.isArray(data) ? data.length : spec?.data?.values?.length || 0).toLocaleString()} total rows 
+          {(() => {
+            // Calculate the total row count safely
+            let dataLength = 0;
+            if (Array.isArray(data)) {
+              dataLength = data.length;
+            } else if (spec?.data && 'values' in spec.data) {
+              const values = spec.data.values;
+              dataLength = Array.isArray(values) ? values.length : 0;
+            }
+            return dataLength.toLocaleString();
+          })()} total rows 
           (showing {sampledData.length} samples) × {columns.length} columns
         </SummaryText>
         <ViewDataButton onClick={() => setShowDataTable(!showDataTable)}>
@@ -431,7 +413,7 @@ export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: Char
         </ViewDataButton>
       </DataSummary>
 
-      {showDataTable && (
+      {sampledData.length > 0 && showDataTable && (
         <>
           <SamplingContainer>
             {[1, 10, 25, 50, 75, 100].map(size => (
@@ -442,76 +424,52 @@ export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: Char
                 role="button"
                 tabIndex={0}
               >
-                {size}%
+                {size} rows
               </SampleOption>
             ))}
           </SamplingContainer>
-
-          <ColumnControls>
-            <ColumnToggle 
-              $active={visibleColumns.size === columns.length}
-              onClick={toggleAllColumns}
-            >
-              {visibleColumns.size === columns.length ? (
-                <VisibilityOffIcon />
-              ) : (
-                <VisibilityIcon />
-              )}
-              All Columns
-            </ColumnToggle>
-            {columns.map(col => (
-              <ColumnToggle
-                key={col}
-                $active={visibleColumns.has(col)}
-                onClick={() => toggleColumn(col)}
-              >
-                {visibleColumns.has(col) ? (
-                  <VisibilityIcon />
-                ) : (
-                  <VisibilityOffIcon />
-                )}
-                {col}
-              </ColumnToggle>
-            ))}
-          </ColumnControls>
-
+          
           <DataTableContainer>
             <DataTable>
               <thead>
                 <tr>
-                  {columns.filter(col => visibleColumns.has(col)).map(col => (
-                    <th key={col}>
-                      {col}
-                      <ColumnType>
-                        {typeof sampledData[0]?.[col]}
-                      </ColumnType>
-                    </th>
+                  {columns.map(column => (
+                    <th key={column}>{column}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {sampledData
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((row: Record<string, any>, i: number) => (
-                    <tr key={i}>
-                      {columns
-                        .filter(col => visibleColumns.has(col))
-                        .map(col => (
-                          <td key={col}>{String(row[col] ?? '')}</td>
-                        ))}
-                    </tr>
-                  ))}
+                {paginatedData.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {columns.map(column => (
+                      <td key={column}>
+                        {typeof row[column] === 'object' 
+                          ? JSON.stringify(row[column]) 
+                          : String(row[column])}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
               </tbody>
             </DataTable>
-            <TablePagination
-              component="div"
-              count={sampledData.length}
-              page={page}
-              onPageChange={handleChangePage}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              rowsPerPageOptions={[10, 25, 50]}
-            />
+            
+            <Pagination>
+              <PageButton
+                onClick={() => setPage(prev => Math.max(0, prev - 1))}
+                disabled={page === 0}
+              >
+                Previous
+              </PageButton>
+              <span>
+                Page {page + 1} of {Math.ceil(sampledData.length / rowsPerPage)}
+              </span>
+              <PageButton
+                onClick={() => setPage(prev => Math.min(Math.ceil(sampledData.length / rowsPerPage) - 1, prev + 1))}
+                disabled={page >= Math.ceil(sampledData.length / rowsPerPage) - 1}
+              >
+                Next
+              </PageButton>
+            </Pagination>
           </DataTableContainer>
         </>
       )}

@@ -1,12 +1,18 @@
 export interface DatasetMetadata {
-  values: any[];
-  dataTypes?: Record<string, string>;
   id?: string;
-  name?: string;
+  name: string;
   description?: string;
+  values?: any[];
+  columns?: string[];
   source?: string;
   uploadDate?: string;
-  columns?: string[];
+  lastModified?: string;
+  fileSize?: number;
+  type?: string;
+  compatibleCharts?: string[];
+  dataTypes?: Record<string, string>;
+  isSample?: boolean;
+  transformed?: boolean;
 }
 
 export type DatasetValues = any[]; 

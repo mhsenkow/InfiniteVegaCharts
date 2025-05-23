@@ -11,12 +11,6 @@
 
 A React-based visualization gallery and editor built with Vega-Lite. Create, customize, and explore data visualizations with an intuitive interface.
 
-Got a basic electron version running! Should be here, or hit me up...if anyone reads this. 
-(If it freezes, toggle between the buttons at the top / I'll fix that soon....)
-
-https://mhsenkow.org/experiments/VegaExplorer/Vega%20Gallery-0.0.0-arm64.dmg
-(Please don't hack me, I'm broke and a designer.)
-
 ![Vega Gallery Demo](https://raw.githubusercontent.com/yourusername/vega-gallery/main/docs/demo.gif)
 
 ## Features
@@ -27,6 +21,11 @@ https://mhsenkow.org/experiments/VegaExplorer/Vega%20Gallery-0.0.0-arm64.dmg
 - Multiple chart types and encoding options
 - Image data extraction using OCR for chart digitization
 - Customizable styles and themes
+- Canvas-based dashboards with smooth drag and resize
+- Data lineage tracking for transparency and governance
+- Sample dataset system with pre-loaded examples
+- Responsive layout with customizable width settings
+- Transformed dataset indicators
 
 ## Getting Started
 
@@ -197,6 +196,14 @@ npm run dev
 - Responsive layout system
 - Advanced comparison charts (Violin, Heatmap, Parallel Coordinates)
 - OCR-based image data extraction
+- Completely reimplemented canvas interaction system
+- Data lineage implementation for tracking data sources
+- Sample dataset system with auto-loading examples
+- Layout and chart width customization options
+- Transformed dataset indicators and tracking
+- Smoother drag and resize interactions with useGesture
+- Improved spacing and margins across the application
+- Data tables open by default with better formatting
 
 ### 🔄 In Progress
 - Enhanced data transformation tools

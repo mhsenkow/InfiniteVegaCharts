@@ -1,10 +1,12 @@
 import { DatasetMetadata } from '../types/dataset';
+import { Dashboard } from '../types/dashboard';
 
 const DB_NAME = 'vegaGalleryDB';
 const DATASETS_STORE = 'datasets';
 const SNAPSHOTS_STORE = 'snapshots';
 const CANVAS_STORE = 'canvases';
-const DB_VERSION = 2; // Increased version to trigger onupgradeneeded
+const DASHBOARD_STORE = 'dashboards';
+const DB_VERSION = 3; // Increased version to trigger onupgradeneeded
 
 // Custom error class for IndexedDB operations
 class IndexedDBError extends Error {
@@ -115,6 +117,11 @@ export const initDB = async (retryCount = 3, delay = 500): Promise<IDBDatabase> 
               if (!db.objectStoreNames.contains(CANVAS_STORE)) {
                 console.log(`Creating ${CANVAS_STORE} store`);
                 db.createObjectStore(CANVAS_STORE, { keyPath: 'id' });
+              }
+              
+              if (!db.objectStoreNames.contains(DASHBOARD_STORE)) {
+                console.log(`Creating ${DASHBOARD_STORE} store`);
+                db.createObjectStore(DASHBOARD_STORE, { keyPath: 'id' });
               }
             } catch (error) {
               reject(new IndexedDBError('Failed to create object store', error));
@@ -384,6 +391,8 @@ export interface Snapshot {
   datasetId?: string;
   createdAt: string;
   thumbnail?: string; // Base64 encoded image
+  source?: string; // Source information for data lineage
+  notes?: string; // Additional notes about data source
 }
 
 // Snapshot operations
@@ -737,6 +746,174 @@ export const deleteCanvas = async (id: string): Promise<void> => {
       throw error;
     } else {
       throw new IndexedDBError(`Failed to delete canvas: ${id}`, error);
+    }
+  }
+};
+
+// Dashboard operations
+export const storeDashboard = async (dashboard: Dashboard): Promise<void> => {
+  if (!dashboard || !dashboard.id) {
+    throw new Error('Invalid dashboard: Dashboard or dashboard ID is missing');
+  }
+
+  try {
+    const db = await initDB();
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = db.transaction(DASHBOARD_STORE, 'readwrite');
+        
+        transaction.onerror = () => {
+          reject(new IndexedDBError('Transaction failed', transaction.error));
+        };
+        
+        const store = transaction.objectStore(DASHBOARD_STORE);
+        const putRequest = store.put(dashboard);
+
+        putRequest.onerror = () => {
+          reject(new IndexedDBError(`Failed to store dashboard: ${dashboard.id}`, putRequest.error));
+        };
+        
+        putRequest.onsuccess = () => {
+          resolve();
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      } catch (error) {
+        reject(new IndexedDBError('Error in database transaction', error));
+      }
+    });
+  } catch (error) {
+    if (error instanceof IndexedDBError) {
+      throw error;
+    } else {
+      throw new IndexedDBError('Failed to store dashboard', error);
+    }
+  }
+};
+
+export const getDashboard = async (id: string): Promise<Dashboard | null> => {
+  if (!id) {
+    throw new Error('Invalid dashboard ID: ID is missing');
+  }
+  
+  try {
+    const db = await initDB();
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = db.transaction(DASHBOARD_STORE, 'readonly');
+        
+        transaction.onerror = () => {
+          reject(new IndexedDBError('Transaction failed', transaction.error));
+        };
+        
+        const store = transaction.objectStore(DASHBOARD_STORE);
+        const getRequest = store.get(id);
+
+        getRequest.onerror = () => {
+          reject(new IndexedDBError(`Failed to get dashboard: ${id}`, getRequest.error));
+        };
+        
+        getRequest.onsuccess = () => {
+          resolve(getRequest.result || null);
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      } catch (error) {
+        reject(new IndexedDBError('Error in database transaction', error));
+      }
+    });
+  } catch (error) {
+    if (error instanceof IndexedDBError) {
+      throw error;
+    } else {
+      throw new IndexedDBError(`Failed to get dashboard: ${id}`, error);
+    }
+  }
+};
+
+export const getAllDashboards = async (): Promise<Dashboard[]> => {
+  try {
+    const db = await initDB();
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = db.transaction(DASHBOARD_STORE, 'readonly');
+        
+        transaction.onerror = () => {
+          reject(new IndexedDBError('Transaction failed', transaction.error));
+        };
+        
+        const store = transaction.objectStore(DASHBOARD_STORE);
+        const getAllRequest = store.getAll();
+
+        getAllRequest.onerror = () => {
+          reject(new IndexedDBError('Failed to get all dashboards', getAllRequest.error));
+        };
+        
+        getAllRequest.onsuccess = () => {
+          resolve(getAllRequest.result || []);
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      } catch (error) {
+        reject(new IndexedDBError('Error in database transaction', error));
+      }
+    });
+  } catch (error) {
+    if (error instanceof IndexedDBError) {
+      throw error;
+    } else {
+      throw new IndexedDBError('Failed to get all dashboards', error);
+    }
+  }
+};
+
+export const deleteDashboard = async (id: string): Promise<void> => {
+  if (!id) {
+    throw new Error('Invalid dashboard ID: ID is missing');
+  }
+  
+  try {
+    const db = await initDB();
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = db.transaction(DASHBOARD_STORE, 'readwrite');
+        
+        transaction.onerror = () => {
+          reject(new IndexedDBError('Transaction failed', transaction.error));
+        };
+        
+        const store = transaction.objectStore(DASHBOARD_STORE);
+        const deleteRequest = store.delete(id);
+
+        deleteRequest.onerror = () => {
+          reject(new IndexedDBError(`Failed to delete dashboard: ${id}`, deleteRequest.error));
+        };
+        
+        deleteRequest.onsuccess = () => {
+          resolve();
+        };
+        
+        transaction.oncomplete = () => {
+          db.close();
+        };
+      } catch (error) {
+        reject(new IndexedDBError('Error in database transaction', error));
+      }
+    });
+  } catch (error) {
+    if (error instanceof IndexedDBError) {
+      throw error;
+    } else {
+      throw new IndexedDBError(`Failed to delete dashboard: ${id}`, error);
     }
   }
 }; 

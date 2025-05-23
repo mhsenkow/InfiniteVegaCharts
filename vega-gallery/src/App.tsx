@@ -12,9 +12,10 @@ import { EditorLayout } from './components/Editor/EditorLayout'
 import { DataManagement } from './components/DataManagement/DataManagement'
 import { theme } from './types/theme'
 import { initDB } from './utils/indexedDB'
+import { seedDatabaseWithSampleData } from './utils/seedData'
 import { DatabaseErrorModal } from './components/DataManagement/DatabaseErrorModal'
 import ErrorBoundary from './components/common/ErrorBoundary'
-import { CanvasArea } from './components/Canvas/CanvasArea'
+import { DashboardContainer } from './components/Dashboard/DashboardContainer'
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -25,13 +26,26 @@ function App() {
   const [selectedChart, setSelectedChart] = useState<string | null>(null)
   const [dbError, setDbError] = useState<Error | null>(null)
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false)
+  const [isDbSeeded, setIsDbSeeded] = useState(false)
 
   useEffect(() => {
-    initDB().catch(error => {
-      console.error('Failed to initialize database:', error);
-      setDbError(error instanceof Error ? error : new Error('Unknown database error'));
-      setIsErrorModalOpen(true);
-    });
+    // Initialize database and seed with sample data
+    const initializeApp = async () => {
+      try {
+        // First initialize the database
+        await initDB();
+        
+        // Then seed with sample data if needed
+        const seeded = await seedDatabaseWithSampleData();
+        setIsDbSeeded(seeded);
+      } catch (error) {
+        console.error('Failed to initialize database:', error);
+        setDbError(error instanceof Error ? error : new Error('Unknown database error'));
+        setIsErrorModalOpen(true);
+      }
+    };
+    
+    initializeApp();
   }, []);
 
   const handleDatabaseReset = () => {
@@ -56,8 +70,8 @@ function App() {
                     />
                   )
                 } />
-                <Route path="/data" element={<DataManagement />} />
-                <Route path="/dashboard" element={<CanvasArea />} />
+                <Route path="/data" element={<DataManagement isDbSeeded={isDbSeeded} />} />
+                <Route path="/dashboard" element={<DashboardContainer />} />
               </Routes>
             </Layout>
             

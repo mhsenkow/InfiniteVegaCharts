@@ -5,6 +5,10 @@ import { ChartFooter } from './ChartFooter'
 import { TopLevelSpec } from 'vega-lite'
 import DownloadIcon from '@mui/icons-material/Download'
 import { ExtendedSpec } from '../../types/vega'
+import WidthNormalIcon from '@mui/icons-material/CropLandscape'
+import WidthMediumIcon from '@mui/icons-material/Crop169'
+import WidthWideIcon from '@mui/icons-material/Crop75'
+import { Tooltip, ToggleButtonGroup, ToggleButton } from '@mui/material'
 
 const PreviewContainer = styled.div`
   display: flex;
@@ -12,14 +16,24 @@ const PreviewContainer = styled.div`
   width: 100%;
   height: 100%;
   overflow: hidden;
+  padding: 0 10px;
 `
 
-const ChartContainer = styled.div<{ $height: number; $isActive?: boolean }>`
+const ChartContainer = styled.div<{ $height: number; $isActive?: boolean; $width: string }>`
   height: ${props => props.$height}px;
   min-height: 200px;
   position: relative;
   padding-bottom: 6px;
-  width: 100%;
+  padding: 0 20px 6px;
+  margin: 0 auto;
+  width: ${props => {
+    switch(props.$width) {
+      case 'narrow': return '800px';
+      case 'medium': return '1200px';
+      case 'wide': return '95%';
+      default: return '85%';
+    }
+  }};
   cursor: ${props => props.$isActive ? 'default' : 'pointer'};
   display: flex;
   justify-content: center;
@@ -32,10 +46,18 @@ const ChartContainer = styled.div<{ $height: number; $isActive?: boolean }>`
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 12px;
   }
 
   .vega-embed .marks {
     max-width: 100%;
+  }
+  
+  /* Fix for SVG being cut off */
+  svg {
+    overflow: visible;
+    max-width: 95%;
+    margin: 0 auto;
   }
   
   ${props => !props.$isActive && `
@@ -125,12 +147,51 @@ const ASPECT_RATIOS: AspectRatio[] = [
 
 const AspectRatioControl = styled.div`
   display: flex;
+  justify-content: space-between;
   gap: 8px;
   margin-bottom: 8px;
-  padding: 8px;
+  padding: 8px 12px;
   background: #f8f9fa;
   border-radius: 4px;
   overflow-x: auto;
+`;
+
+const RatioContainer = styled.div`
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+`;
+
+const WidthToggleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-right: 32px;
+`;
+
+const IconOnlyButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 4px;
+  color: ${props => props.theme.text.primary};
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 6px;
+  height: 32px;
+  width: 32px;
+  margin: 0 4px;
+
+  &:hover {
+    background: #f8f9fa;
+    border-color: ${props => props.theme.colors.primary};
+  }
+
+  svg {
+    font-size: 18px;
+  }
 `;
 
 const RatioButton = styled.button<{ $active: boolean }>`
@@ -154,36 +215,6 @@ const RatioButton = styled.button<{ $active: boolean }>`
   }
 `;
 
-const DownloadButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: white;
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  color: ${props => props.theme.text.primary};
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #f8f9fa;
-    border-color: ${props => props.theme.colors.primary};
-  }
-
-  svg {
-    font-size: 18px;
-  }
-`;
-
-const ChartControls = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  padding: 8px;
-  gap: 8px;
-`;
-
 const DownloadMenu = styled.div`
   position: relative;
   display: inline-block;
@@ -200,6 +231,7 @@ const DownloadOptions = styled.div<{ $show: boolean }>`
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   display: ${props => props.$show ? 'block' : 'none'};
   z-index: 10;
+  min-width: 150px;
 `;
 
 const DownloadOption = styled.button`
@@ -239,6 +271,9 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
   const [chartActive, setChartActive] = useState(false)
   const [vegaViewReady, setVegaViewReady] = useState(false)
   const currentViewRef = useRef<any>(null)
+  const [chartWidth, setChartWidth] = useState(() => {
+    return localStorage.getItem('chartWidth') || 'medium';
+  });
 
   // Fix the type issues in parsedSpec creation
   const parsedSpec = useMemo(() => {
@@ -552,88 +587,106 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
     });
   }, [renderChart, onVegaViewUpdate]);
 
+  const handleChartWidthChange = (event: React.MouseEvent<HTMLElement>, newValue: string | null) => {
+    if (newValue) {
+      setChartWidth(newValue);
+      localStorage.setItem('chartWidth', newValue);
+      // Trigger a resize to update the chart
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 100);
+    }
+  };
+
   return (
     <PreviewContainer ref={containerRef}>
       <AspectRatioControl>
-        {ASPECT_RATIOS.map((ratio) => (
-          <RatioButton
-            key={ratio.name}
-            $active={selectedRatio.name === ratio.name}
-            onClick={() => setSelectedRatio(ratio)}
-            title={ratio.description}
-          >
-            <div>{ratio.name}</div>
-            <div className="description">{ratio.description}</div>
-          </RatioButton>
-        ))}
+        <RatioContainer>
+          {ASPECT_RATIOS.map(ratio => (
+            <RatioButton
+              key={ratio.name}
+              $active={selectedRatio.name === ratio.name}
+              onClick={() => setSelectedRatio(ratio)}
+            >
+              {ratio.name}
+              <div className="description">{ratio.description}</div>
+            </RatioButton>
+          ))}
+        </RatioContainer>
+        
+        <WidthToggleContainer>
+          <Tooltip title="Chart Width">
+            <ToggleButtonGroup
+              value={chartWidth}
+              exclusive
+              onChange={handleChartWidthChange}
+              size="small"
+            >
+              <ToggleButton value="narrow" aria-label="narrow">
+                <WidthNormalIcon fontSize="small" />
+              </ToggleButton>
+              <ToggleButton value="medium" aria-label="medium">
+                <WidthMediumIcon fontSize="small" />
+              </ToggleButton>
+              <ToggleButton value="wide" aria-label="wide">
+                <WidthWideIcon fontSize="small" />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Tooltip>
+          
+          <DownloadMenu>
+            <Tooltip title="Download Chart">
+              <IconOnlyButton onClick={() => setShowDownloadMenu(!showDownloadMenu)}>
+                <DownloadIcon />
+              </IconOnlyButton>
+            </Tooltip>
+            <DownloadOptions $show={showDownloadMenu}>
+              <DownloadOption onClick={() => {
+                handleDownloadSVG();
+                setShowDownloadMenu(false);
+              }}>
+                <DownloadIcon /> SVG Vector
+              </DownloadOption>
+              <DownloadOption onClick={() => {
+                handleDownloadPNG();
+                setShowDownloadMenu(false);
+              }}>
+                <DownloadIcon /> PNG Image
+              </DownloadOption>
+            </DownloadOptions>
+          </DownloadMenu>
+        </WidthToggleContainer>
       </AspectRatioControl>
-      
-      <ChartControls>
-        <DownloadMenu>
-          <DownloadButton onClick={() => setShowDownloadMenu(!showDownloadMenu)}>
-            <DownloadIcon />
-            Download
-          </DownloadButton>
-          <DownloadOptions $show={showDownloadMenu}>
-            <DownloadOption onClick={() => {
-              handleDownloadSVG();
-              setShowDownloadMenu(false);
-            }}>
-              <DownloadIcon /> SVG Vector
-            </DownloadOption>
-            <DownloadOption onClick={() => {
-              handleDownloadPNG();
-              setShowDownloadMenu(false);
-            }}>
-              <DownloadIcon /> PNG Image
-            </DownloadOption>
-          </DownloadOptions>
-        </DownloadMenu>
-      </ChartControls>
 
-      <ChartContainer 
-        ref={chartRef} 
-        $height={chartHeight}
-        $isActive={chartActive && vegaViewReady}
-        onClick={handleChartClick}
-      >
-        <div 
-          ref={chartContentRef}
-          style={{ width: '100%', height: '100%' }}
-        />
-        {(!chartActive || !vegaViewReady) && (
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            color: '#6c757d',
-            textAlign: 'center',
-            pointerEvents: 'none',
-            opacity: 0.7,
-            fontSize: '0.9rem'
-          }}>
-            {!chartActive ? 'Click to activate chart' : 'Waiting for chart to initialize...'}
-          </div>
-        )}
-      </ChartContainer>
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-      {selectedRatio.width === 0 && (
-        <ResizeHandle 
-          onMouseDown={handleMouseDown}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handleMouseDown({ clientY: e.touches[0].clientY } as React.MouseEvent);
-          }}
-        />
-      )}
+      <div>
+        <ChartContainer
+          ref={chartRef}
+          $height={chartHeight}
+          $isActive={chartActive && vegaViewReady}
+          $width={chartWidth}
+          onClick={handleChartClick}
+        >
+          <div ref={chartContentRef} style={{ width: '100%', height: '100%' }} />
+        </ChartContainer>
+      </div>
+      
+      <ResizeHandle 
+        className="resize-handle" 
+        title="Resize chart" 
+        onMouseDown={handleMouseDown}
+      />
+      
       <DataContainer>
-        <ChartFooter 
-          data={parsedSpec.data.values}
-          spec={parsedSpec}
-          sampleSize={sampleSize}
-          onSampleSizeChange={setSampleSize}
-        />
+        {error ? (
+          <ErrorMessage>{error}</ErrorMessage>
+        ) : (
+          <ChartFooter
+            data={parsedSpec?.data?.values}
+            spec={parsedSpec}
+            sampleSize={sampleSize}
+            onSampleSizeChange={setSampleSize}
+          />
+        )}
       </DataContainer>
     </PreviewContainer>
   );

@@ -78,6 +78,18 @@ const DatasetName = styled.div`
   font-weight: 500;
   color: ${props => props.theme.text.primary};
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const TransformedBadge = styled.span`
+  background-color: #f0f4c3;
+  color: #33691e;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
 `;
 
 const DatasetInfo = styled.div`

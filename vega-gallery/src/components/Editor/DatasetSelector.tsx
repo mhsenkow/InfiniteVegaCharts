@@ -308,6 +308,9 @@ export const DatasetSelector = ({
                     </DatasetDescription>
                     <DatasetMeta>
                       <Badge>Upload</Badge>
+                      {dataset.transformed && (
+                        <Badge style={{ backgroundColor: '#f0f4c3', color: '#33691e' }}>Transformed</Badge>
+                      )}
                       {dataset.uploadDate && (
                         <span>{new Date(dataset.uploadDate).toLocaleDateString()}</span>
                       )}

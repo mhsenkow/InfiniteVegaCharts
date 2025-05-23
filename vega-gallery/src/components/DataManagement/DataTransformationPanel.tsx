@@ -187,7 +187,8 @@ export const DataTransformationPanel: React.FC<DataTransformationPanelProps> = (
         rowCount: transformedData.length,
         columnCount: Object.keys(transformedData[0] || {}).length,
         dataTypes: detectDataTypes(transformedData),
-        uploadDate: new Date().toISOString()
+        uploadDate: new Date().toISOString(),
+        transformed: true
       };
 
       await storeDataset(newDataset);
