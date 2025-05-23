@@ -8,8 +8,10 @@ import { LoadingState } from '../common/LoadingState';
 import TableViewIcon from '@mui/icons-material/TableView';
 import GridViewIcon from '@mui/icons-material/GridView';
 import ImageIcon from '@mui/icons-material/Image';
+import BackupIcon from '@mui/icons-material/Backup';
 import { validateDataset } from '../../utils/dataUtils';
 import { ImageDataExtractor } from './ImageDataExtractor';
+import { ExportImport } from './ExportImport';
 
 const Container = styled.div`
   padding: 24px;
@@ -143,7 +145,7 @@ export const DataManagement = () => {
   const [datasets, setDatasets] = useState<DatasetMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDataset, setSelectedDataset] = useState<DatasetMetadata | null>(null);
-  const [activeTab, setActiveTab] = useState<'datasets' | 'transform' | 'image'>('datasets');
+  const [activeTab, setActiveTab] = useState<'datasets' | 'transform' | 'image' | 'exportimport'>('datasets');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [error, setError] = useState<string | null>(null);
 
@@ -235,6 +237,13 @@ export const DataManagement = () => {
             Image Extraction
           </Tab>
           <Tab 
+            $active={activeTab === 'exportimport'} 
+            onClick={() => setActiveTab('exportimport')}
+          >
+            <BackupIcon fontSize="small" />
+            Export/Import
+          </Tab>
+          <Tab 
             $active={activeTab === 'transform'} 
             onClick={() => setActiveTab('transform')}
             disabled={!selectedDataset}
@@ -265,8 +274,8 @@ export const DataManagement = () => {
                     $active={selectedDataset?.id === dataset.id}
                   >
                     <h3>{dataset.name}</h3>
-                    <p>{dataset.rowCount} rows × {dataset.columnCount} columns</p>
-                    <p>Uploaded: {new Date(dataset.uploadDate).toLocaleDateString()}</p>
+                    <p>{dataset.values?.length || 0} rows × {dataset.columns?.length || 0} columns</p>
+                    <p>Uploaded: {dataset.uploadDate ? new Date(dataset.uploadDate).toLocaleDateString() : 'Unknown'}</p>
                   </DatasetCard>
                 ))}
               </DatasetGrid>
@@ -285,11 +294,11 @@ export const DataManagement = () => {
                   {datasets.map(dataset => (
                     <tr key={dataset.id}>
                       <td>{dataset.name}</td>
-                      <td>{dataset.rowCount}</td>
-                      <td>{dataset.columnCount}</td>
-                      <td>{new Date(dataset.uploadDate).toLocaleDateString()}</td>
+                      <td>{dataset.values?.length || 0}</td>
+                      <td>{dataset.columns?.length || 0}</td>
+                      <td>{dataset.uploadDate ? new Date(dataset.uploadDate).toLocaleDateString() : 'Unknown'}</td>
                       <td>
-                        <DeleteButton onClick={() => handleDeleteDataset(dataset.id)}>Delete</DeleteButton>
+                        <DeleteButton onClick={() => handleDeleteDataset(dataset.id || '')}>Delete</DeleteButton>
                       </td>
                     </tr>
                   ))}
@@ -313,6 +322,10 @@ export const DataManagement = () => {
           dataset={selectedDataset}
           onComplete={handleTransformComplete}
         />
+      )}
+
+      {activeTab === 'exportimport' && (
+        <ExportImport />
       )}
     </Container>
   );

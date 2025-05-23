@@ -12,6 +12,9 @@ import { EditorLayout } from './components/Editor/EditorLayout'
 import { DataManagement } from './components/DataManagement/DataManagement'
 import { theme } from './types/theme'
 import { initDB } from './utils/indexedDB'
+import { DatabaseErrorModal } from './components/DataManagement/DatabaseErrorModal'
+import ErrorBoundary from './components/common/ErrorBoundary'
+import { CanvasArea } from './components/Canvas/CanvasArea'
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -20,35 +23,56 @@ const AppContainer = styled.div`
 
 function App() {
   const [selectedChart, setSelectedChart] = useState<string | null>(null)
+  const [dbError, setDbError] = useState<Error | null>(null)
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false)
 
   useEffect(() => {
     initDB().catch(error => {
       console.error('Failed to initialize database:', error);
+      setDbError(error instanceof Error ? error : new Error('Unknown database error'));
+      setIsErrorModalOpen(true);
     });
   }, []);
 
+  const handleDatabaseReset = () => {
+    // Reload the application after database reset
+    window.location.reload();
+  };
+
   return (
-    <ThemeProvider theme={theme}>
-      <BrowserRouter>
-        <AppContainer>
-          <Layout>
-            <Routes>
-              <Route path="/" element={
-                !selectedChart ? (
-                  <GalleryGrid onChartSelect={setSelectedChart} />
-                ) : (
-                  <EditorLayout 
-                    chartId={selectedChart} 
-                    onBack={() => setSelectedChart(null)} 
-                  />
-                )
-              } />
-              <Route path="/data" element={<DataManagement />} />
-            </Routes>
-          </Layout>
-        </AppContainer>
-      </BrowserRouter>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider theme={theme}>
+        <BrowserRouter>
+          <AppContainer>
+            <Layout>
+              <Routes>
+                <Route path="/" element={
+                  !selectedChart ? (
+                    <GalleryGrid onChartSelect={setSelectedChart} />
+                  ) : (
+                    <EditorLayout 
+                      chartId={selectedChart} 
+                      onBack={() => setSelectedChart(null)} 
+                    />
+                  )
+                } />
+                <Route path="/data" element={<DataManagement />} />
+                <Route path="/dashboard" element={<CanvasArea />} />
+              </Routes>
+            </Layout>
+            
+            {isErrorModalOpen && (
+              <DatabaseErrorModal 
+                isOpen={isErrorModalOpen}
+                error={dbError}
+                onClose={() => setIsErrorModalOpen(false)}
+                onReset={handleDatabaseReset}
+              />
+            )}
+          </AppContainer>
+        </BrowserRouter>
+      </ThemeProvider>
+    </ErrorBoundary>
   )
 }
 

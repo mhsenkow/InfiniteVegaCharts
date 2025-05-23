@@ -3,10 +3,11 @@ import styled from 'styled-components';
 import { DatasetMetadata } from '../../types/dataset';
 
 const Panel = styled.div`
-  padding: 16px;
   background: white;
   border-radius: 8px;
   border: 1px solid ${props => props.theme.colors.border};
+  overflow: hidden;
+  margin-top: 8px;
 `;
 
 const Accordion = styled.div`

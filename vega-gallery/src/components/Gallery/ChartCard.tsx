@@ -79,7 +79,16 @@ export default memo(function ChartCard({ chart, onClick }: ChartCardProps) {
     // Use explicit type checking to satisfy TypeScript
     const chartId = chart.id as keyof typeof chartSpecs;
     const spec = chartSpecs[chartId];
-    if (!spec) return;
+    
+    if (!spec) {
+      console.error(`No specification found for chart ID: ${chartId}`);
+      
+      // Display a placeholder for failed chart
+      if (chartRef.current) {
+        chartRef.current.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-size:12px;">Chart unavailable</div>';
+      }
+      return;
+    }
 
     try {
       // Check if this is a Vega spec rather than Vega-Lite
@@ -99,6 +108,11 @@ export default memo(function ChartCard({ chart, onClick }: ChartCardProps) {
       await renderVegaLite(chartRef.current, specToRender as any, { mode: 'gallery' });
     } catch (error) {
       console.error(`Failed to render chart ${chart.id}:`, error);
+      
+      // Display an error message in place of the failed chart
+      if (chartRef.current) {
+        chartRef.current.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f44336;font-size:12px;">Failed to render chart</div>';
+      }
     }
   }, [chart.id]);
 

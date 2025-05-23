@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate PWA Icons</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin: 10px;
+    }
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 8px 16px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .icons {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Generate PWA Icons</h1>
+  <div class="icons">
+    <div>
+      <h2>192x192 Icon</h2>
+      <canvas id="canvas192" width="192" height="192"></canvas>
+      <a id="download192" href="#" download="pwa-192x192.png">
+        <button>Download 192x192 Icon</button>
+      </a>
+    </div>
+    <div>
+      <h2>512x512 Icon</h2>
+      <canvas id="canvas512" width="512" height="512"></canvas>
+      <a id="download512" href="#" download="pwa-512x512.png">
+        <button>Download 512x512 Icon</button>
+      </a>
+    </div>
+    <div>
+      <h2>Apple Touch Icon</h2>
+      <canvas id="canvasApple" width="180" height="180"></canvas>
+      <a id="downloadApple" href="#" download="apple-touch-icon.png">
+        <button>Download Apple Touch Icon</button>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    function drawIcon(canvasId, size, color) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      
+      // Background
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, size, size);
+      
+      // Draw a simple V letter for Vega
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.moveTo(size * 0.3, size * 0.25);
+      ctx.lineTo(size * 0.5, size * 0.75);
+      ctx.lineTo(size * 0.7, size * 0.25);
+      ctx.lineTo(size * 0.65, size * 0.25);
+      ctx.lineTo(size * 0.5, size * 0.65);
+      ctx.lineTo(size * 0.35, size * 0.25);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Add text
+      const fontSize = size * 0.1;
+      ctx.font = `bold ${fontSize}px Arial`;
+      ctx.fillStyle = 'white';
+      ctx.textAlign = 'center';
+      ctx.fillText('VEGA GALLERY', size/2, size * 0.85);
+      
+      // Set download link
+      const downloadLink = document.getElementById(`download${canvasId.replace('canvas', '')}`);
+      downloadLink.href = canvas.toDataURL('image/png');
+    }
+
+    // Draw icons
+    drawIcon('canvas192', 192, '#1976d2');
+    drawIcon('canvas512', 512, '#1976d2');
+    drawIcon('canvasApple', 180, '#1976d2');
+  </script>
+</body>
+</html> 

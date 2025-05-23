@@ -4,6 +4,8 @@ import Papa from 'papaparse';
 import { LoadingState } from '../common/LoadingState';
 import { detectDataTypes } from '../../utils/dataUtils';
 import { storeDataset } from '../../utils/indexedDB';
+import { DatabaseErrorModal } from '../DataManagement/DatabaseErrorModal';
+import { DatasetMetadata } from '../../types/dataset';
 
 const Section = styled.div`
   margin-bottom: 24px;
@@ -105,17 +107,10 @@ const EditableDatasetName = styled.input`
   }
 `;
 
-interface Dataset {
-  id: string;
-  name: string;
-  rows: number;
-  columns: number;
-  uploadDate: Date;
-  data: any[];
-  fullData?: any[]; // Store full dataset if needed
-  sampleRate?: number;
-  totalRows?: number;
-  totalColumns?: number;
+// Create an extended dataset interface that includes our UI-specific properties
+interface ExtendedDatasetMetadata extends DatasetMetadata {
+  rowCount?: number;
+  columnCount?: number;
 }
 
 interface DatasetSectionProps {
@@ -126,7 +121,9 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadedDatasets, setUploadedDatasets] = useState<DatasetMetadata[]>([]);
+  const [uploadedDatasets, setUploadedDatasets] = useState<ExtendedDatasetMetadata[]>([]);
+  const [dbError, setDbError] = useState<Error | null>(null);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
 
   const handleDelete = (id: string) => {
     setUploadedDatasets(prev => prev.filter(dataset => dataset.id !== id));
@@ -140,8 +137,10 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
   };
 
   const handleUpload = async (file: File) => {
+    setIsLoading(true);
+    
     try {
-      const results = await new Promise((resolve, reject) => {
+      const results = await new Promise<Papa.ParseResult<any>>((resolve, reject) => {
         Papa.parse(file, {
           header: true,
           dynamicTyping: true,
@@ -151,7 +150,7 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
         });
       });
 
-      let values = results.data.filter(row => Object.keys(row).length > 0);
+      let values = results.data.filter((row: any) => Object.keys(row).length > 0);
       
       const displaySample = values.slice(0, 100);
       
@@ -169,12 +168,31 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
         dataTypes: detectDataTypes(displaySample)
       };
 
-      await storeDataset(dataset);
-      onDatasetLoad(dataset);
+      try {
+        await storeDataset(dataset);
+        onDatasetLoad(dataset);
+      } catch (dbError) {
+        console.error('Error storing dataset:', dbError);
+        setDbError(dbError instanceof Error ? dbError : new Error('Unknown database error'));
+        setIsErrorModalOpen(true);
+        throw dbError; // Rethrow to be caught by the outer catch
+      }
       
     } catch (error) {
       console.error('Error uploading dataset:', error);
+      // Only show error modal for DB errors, not for parsing errors
+      if (!isErrorModalOpen) {
+        alert(`Error uploading dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleDatabaseReset = () => {
+    // After successful reset, we can clear the error
+    setDbError(null);
+    // We might want to reload the app or component here
   };
 
   // Helper function to detect column type
@@ -205,6 +223,15 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
 
   return (
     <Section>
+      {isErrorModalOpen && (
+        <DatabaseErrorModal 
+          isOpen={isErrorModalOpen}
+          error={dbError}
+          onClose={() => setIsErrorModalOpen(false)}
+          onReset={handleDatabaseReset}
+        />
+      )}
+      
       {uploadedDatasets.length > 0 && (
         <Table>
           <thead>
@@ -219,12 +246,12 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
           <tbody>
             {uploadedDatasets.map(dataset => (
               <tr key={dataset.id}>
-                <td>{dataset.name}</td>
-                <td>{dataset.rowCount}</td>
-                <td>{dataset.columnCount}</td>
-                <td>{new Date(dataset.uploadDate).toLocaleDateString()}</td>
+                <td>{dataset.name || 'Unnamed'}</td>
+                <td>{dataset.rowCount || dataset.values?.length || 0}</td>
+                <td>{dataset.columnCount || dataset.columns?.length || 0}</td>
+                <td>{dataset.uploadDate ? new Date(dataset.uploadDate).toLocaleDateString() : 'Unknown'}</td>
                 <td>
-                  <DeleteButton onClick={() => handleDelete(dataset.id)}>
+                  <DeleteButton onClick={() => dataset.id && handleDelete(dataset.id)}>
                     Delete
                   </DeleteButton>
                 </td>

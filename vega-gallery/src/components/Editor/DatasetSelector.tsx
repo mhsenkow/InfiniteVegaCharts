@@ -16,12 +16,18 @@ import { detectDataTypes, detectColumnType } from '../../utils/dataUtils'
 
 const Container = styled.div`
   margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 `
 
 const DatasetList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-y: auto;
+  flex: 1;
 `
 
 const DatasetCard = styled.div<{ $active: boolean }>`
@@ -86,9 +92,14 @@ const Badge = styled.span`
 `
 
 const TabPanel = styled.div<{ $active: boolean }>`
-  display: ${props => props.$active ? 'block' : 'none'};
+  display: ${props => props.$active ? 'flex' : 'none'};
+  flex-direction: column;
   padding: 16px 0;
-`;
+  height: 100%;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+`
 
 const DatasetControls = styled.div`
   display: flex;

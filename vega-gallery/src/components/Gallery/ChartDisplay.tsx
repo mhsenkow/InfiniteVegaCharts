@@ -25,7 +25,9 @@ interface ChartDisplayProps {
 export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDisplayProps) => {
   const [spec, setSpec] = useState<ExtendedSpec | null>(null);
   const [encodings, setEncodings] = useState<ChartEncoding | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const renderTimeout = useRef<number | undefined>(undefined);
 
   // Memoize the base spec to prevent unnecessary recalculations
@@ -72,28 +74,96 @@ export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDispl
     setEncodings(newEncodings);
   };
 
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+    
+    if (!isFullscreen) {
+      if (containerRef.current.requestFullscreen) {
+        containerRef.current.requestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const downloadChart = (format: 'png' | 'svg' | 'json') => {
+    if (!chartRef.current) return;
+    
+    const vegaView = (chartRef.current as any).__vegaMetadata__?.view;
+    if (!vegaView) return;
+    
+    if (format === 'json') {
+      const dataStr = JSON.stringify(spec, null, 2);
+      const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+      const downloadLink = document.createElement('a');
+      downloadLink.setAttribute('href', dataUri);
+      downloadLink.setAttribute('download', `chart-${Date.now()}.json`);
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      return;
+    }
+    
+    vegaView.toImageURL(format).then((url: string) => {
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `chart-${Date.now()}.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }).catch((error: Error) => {
+      console.error(`Failed to download chart as ${format}:`, error);
+    });
+  };
+
   if (!spec) {
     return <div>No chart specification available</div>;
   }
 
   return (
     <ErrorBoundary fallback={<div>Failed to render chart</div>}>
-      <ChartContainer>
+      <ChartContainer ref={containerRef} className={isFullscreen ? 'fullscreen' : ''}>
         <ChartControls>
-          <button 
-            onClick={handleRandomize}
-            title="Try different data combinations"
-          >
-            <span role="img" aria-label="dice">🎲</span>
-            Explore Data
-          </button>
-          <button 
-            onClick={() => setEncodings(null)}
-            title="Reset to default view"
-          >
-            <span role="img" aria-label="reset">↺</span>
-            Reset View
-          </button>
+          <div className="control-group">
+            <button 
+              onClick={handleRandomize}
+              title="Try different data combinations"
+            >
+              <span role="img" aria-label="dice">🎲</span>
+              Explore Data
+            </button>
+            <button 
+              onClick={() => setEncodings(null)}
+              title="Reset to default view"
+            >
+              <span role="img" aria-label="reset">↺</span>
+              Reset
+            </button>
+          </div>
+          
+          <div className="control-group">
+            <button 
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
+            >
+              <span role="img" aria-label="fullscreen">{isFullscreen ? '⊠' : '⤢'}</span>
+            </button>
+            
+            <div className="dropdown">
+              <button className="dropdown-toggle" title="Download options">
+                <span role="img" aria-label="download">⬇️</span>
+                Export
+              </button>
+              <div className="dropdown-menu">
+                <button onClick={() => downloadChart('png')}>PNG Image</button>
+                <button onClick={() => downloadChart('svg')}>SVG Vector</button>
+                <button onClick={() => downloadChart('json')}>JSON Spec</button>
+              </div>
+            </div>
+          </div>
         </ChartControls>
         <ChartWrapper ref={chartRef} />
       </ChartContainer>

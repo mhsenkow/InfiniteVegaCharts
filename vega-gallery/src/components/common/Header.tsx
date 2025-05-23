@@ -2,6 +2,7 @@ import styled from 'styled-components'
 import { useNavigate } from 'react-router-dom'
 import ViewComfyIcon from '@mui/icons-material/ViewComfy'
 import StorageIcon from '@mui/icons-material/Storage'
+import DashboardIcon from '@mui/icons-material/Dashboard'
 import { IconButton, Tooltip } from '@mui/material'
 
 const HeaderContainer = styled.header`
@@ -34,6 +35,11 @@ export const Header = () => {
         <Tooltip title="Gallery">
           <IconButton onClick={() => navigate('/')}>
             <ViewComfyIcon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Dashboard">
+          <IconButton onClick={() => navigate('/dashboard')}>
+            <DashboardIcon />
           </IconButton>
         </Tooltip>
         <Tooltip title="Data Management">

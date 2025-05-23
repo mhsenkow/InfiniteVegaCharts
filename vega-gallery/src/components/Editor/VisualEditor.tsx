@@ -25,25 +25,27 @@ import { ExtendedSpec as VegaExtendedSpec } from '../../types/vega'
 import { transformEncodings, createMarkConfig } from '../../utils/specUtils'
 
 const Container = styled.div`
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
 `
 
 const Section = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: white;
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
+  padding: 4px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 `
 
 const SectionTitle = styled.h3`
   margin: 0 0 16px 0;
-  font-size: 1.1rem;
-  color: #2c3e50;
+  font-size: 1rem;
+  color: ${props => props.theme.text.primary};
   font-weight: 600;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
   padding-bottom: 8px;
 `
 
@@ -672,6 +674,49 @@ const getMarkType = (spec: any): MarkType => {
   return 'point';
 };
 
+// Add the following styled components for tabs 
+const DataTabsContainer = styled.div`
+  display: flex;
+  gap: 2px;
+  margin-bottom: 16px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 4px;
+  overflow-x: auto;
+  flex-shrink: 0;
+`
+
+const DataTab = styled.button<{ $active: boolean }>`
+  padding: 8px 12px;
+  background: ${props => props.$active ? 'white' : 'transparent'};
+  color: ${props => props.$active ? props.theme.colors.primary : props.theme.text.secondary};
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: ${props => props.$active ? '600' : '500'};
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  &:hover {
+    background: ${props => props.$active ? 'white' : 'rgba(255, 255, 255, 0.5)'};
+  }
+`;
+
+const TabContent = styled.div`
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+`;
+
+// Add this type for data subsection tabs
+type DataTabSection = 'dataset' | 'filter' | 'chartType' | 'encoding';
+
 export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProps) => {
   // Add state for dataset cache
   const [datasetCache, setDatasetCache] = useState<Record<string, DatasetMetadata>>({});
@@ -930,45 +975,50 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
   };
 
   const handleEncodingChange = (channel: string, update: EncodingUpdate) => {
-    // Check if the encoding is compatible with the current mark type
-    if (currentMark === 'line' && (channel === 'theta' || channel === 'radius')) {
-      console.warn(`${channel} encoding is not compatible with line mark`);
-      return;
-    }
+    if (!encodings) return;
 
-    const currentEncoding = spec.encoding?.[channel] || {};
-    
-    // Get compatible types for this field
-    const compatibleTypes = update.field ? 
-      getCompatibleTypes(update.field, spec.data?.values || []) : 
-      ['nominal'];
-    
-    // If type is being updated, ensure it's compatible
-    if (update.type && !compatibleTypes.includes(update.type)) {
-      update.type = compatibleTypes[0];
-    }
-    
-    // Set appropriate scale based on type
-    let scale = undefined;
-    if (update.type === 'quantitative') {
-      scale = { type: 'linear', zero: channel === 'y' };
-    } else if (update.type === 'temporal') {
-      scale = { type: 'time' };
-    } else {
-      scale = { type: 'point' };
-    }
+    // Create updated encoding configuration
+    let updatedEncoding = {
+      ...(encodings[channel] || {}),
+      ...update
+    };
 
-    onChange({
-      ...spec,
-      encoding: {
-        ...spec.encoding,
-        [channel]: {
-          ...currentEncoding,
-          ...update,
-          ...(scale && { scale })
-        }
+    // Special case for temporal data
+    if (update.type === 'temporal' && !update.timeUnit && updatedEncoding.field) {
+      const values = spec.data?.values || [];
+      const fieldValues = values.map(d => d[updatedEncoding.field]);
+      const hasTime = fieldValues.some(v => {
+        if (!v) return false;
+        const date = new Date(v);
+        return !isNaN(date.getTime()) && 
+          (v.includes(':') || v.includes('T'));
+      });
+      
+      if (hasTime) {
+        updatedEncoding.timeUnit = 'yearmonthdate';
       }
-    });
+    }
+
+    // Create a copy of current encodings
+    const newEncodings = { ...encodings };
+    
+    // If field is empty, remove the encoding
+    if (update.field === '') {
+      delete newEncodings[channel];
+    } else {
+      newEncodings[channel] = updatedEncoding;
+    }
+    
+    // Update state
+    setEncodings(newEncodings);
+    
+    // Create the updated specification and trigger onChange
+    const newSpec = {
+      ...spec,
+      encoding: newEncodings
+    };
+    
+    onChange(newSpec);
   };
 
   const fields = useMemo(() => {
@@ -1401,46 +1451,56 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
     setShowTemplates(false);
   };
 
+  // Add this state for data tabs
+  const [activeDataTab, setActiveDataTab] = useState<DataTabSection>('dataset');
+
   if (!spec) {
     return <div>Invalid specification</div>
   }
 
   return (
     <Container>
-      <Accordion>
-        <AccordionHeader 
-          onClick={() => toggleAccordion('data')}
-          $isOpen={accordionStates.data}
+      <DataTabsContainer>
+        <DataTab 
+          $active={activeDataTab === 'dataset'} 
+          onClick={() => setActiveDataTab('dataset')}
         >
           Dataset
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </AccordionHeader>
-        <AccordionContent $isOpen={accordionStates.data}>
-          <div>
-            <DatasetSelector
-              chartId={currentMark}
-              currentDataset={currentDataset || ''}
-              onSelect={handleDatasetSelect}
-              datasetCache={datasetCache}
-              setDatasetCache={setDatasetCache}
-            />
-          </div>
-        </AccordionContent>
-      </Accordion>
-
-      <Accordion>
-        <AccordionHeader 
-          onClick={() => toggleAccordion('filter')}
-          $isOpen={accordionStates.filter}
+        </DataTab>
+        <DataTab 
+          $active={activeDataTab === 'filter'} 
+          onClick={() => setActiveDataTab('filter')}
         >
           Filter
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </AccordionHeader>
-        <AccordionContent $isOpen={accordionStates.filter}>
+        </DataTab>
+        <DataTab 
+          $active={activeDataTab === 'chartType'} 
+          onClick={() => setActiveDataTab('chartType')}
+        >
+          Chart Type
+        </DataTab>
+        <DataTab 
+          $active={activeDataTab === 'encoding'} 
+          onClick={() => setActiveDataTab('encoding')}
+        >
+          Encoding
+        </DataTab>
+      </DataTabsContainer>
+
+      {activeDataTab === 'dataset' && (
+        <TabContent>
+          <DatasetSelector
+            chartId={currentMark}
+            currentDataset={currentDataset || ''}
+            onSelect={handleDatasetSelect}
+            datasetCache={datasetCache}
+            setDatasetCache={setDatasetCache}
+          />
+        </TabContent>
+      )}
+
+      {activeDataTab === 'filter' && (
+        <TabContent>
           <div>
             <Control>
               <Label>Field</Label>
@@ -1483,20 +1543,11 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
               </>
             )}
           </div>
-        </AccordionContent>
-      </Accordion>
+        </TabContent>
+      )}
 
-      <Accordion>
-        <AccordionHeader 
-          onClick={() => toggleAccordion('chartType')}
-          $isOpen={accordionStates.chartType}
-        >
-          Chart Type
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </AccordionHeader>
-        <AccordionContent $isOpen={accordionStates.chartType}>
+      {activeDataTab === 'chartType' && (
+        <TabContent>
           <p style={{ color: '#6c757d', marginBottom: '16px' }}>
             Choose the best visual mark for your data. Different marks work better for different types of data and comparisons.
           </p>
@@ -1522,20 +1573,11 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
               </MarkTypeCard>
             ))}
           </MarkTypeGrid>
-        </AccordionContent>
-      </Accordion>
+        </TabContent>
+      )}
 
-      <Accordion>
-        <AccordionHeader 
-          onClick={() => toggleAccordion('encoding')}
-          $isOpen={accordionStates.encoding}
-        >
-          Encoding
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </AccordionHeader>
-        <AccordionContent $isOpen={accordionStates.encoding}>
+      {activeDataTab === 'encoding' && (
+        <TabContent>
           <div>
             <div style={{ 
               display: 'flex', 
@@ -1642,53 +1684,45 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
                     </Select>
                     
                     {encodings[channel]?.field && (
-                      <>
-                        <TypeButtons>
-                          {[
-                            { type: 'quantitative', icon: <NumbersIcon />, label: 'Number' },
-                            { type: 'temporal', icon: <TimelineIcon />, label: 'Time' },
-                            { type: 'nominal', icon: <CategoryIcon />, label: 'Category' },
-                            { type: 'ordinal', icon: <BarChartIcon />, label: 'Ordered' }
-                          ].map(({ type, icon, label }) => {
-                            const field = encodings[channel]?.field;
-                            const compatibleTypes = field ? 
-                              getCompatibleTypes(field, spec.data?.values || []) : 
-                              [];
-                            const isCompatible = compatibleTypes.includes(type);
-                            
-                            return (
-                              <Tooltip key={type} title={label}>
-                                <span>
-                                  <EncodingTypeButton
-                                    $active={encodings[channel]?.type === type}
-                                    $compatible={isCompatible}
-                                    onClick={() => isCompatible && handleEncodingChange(channel, { type })}
-                                    size="small"
-                                    disabled={!isCompatible}
-                                  >
-                                    {icon}
-                                  </EncodingTypeButton>
-                                </span>
-                              </Tooltip>
-                            );
-                          })}
-                        </TypeButtons>
-                        
-                        <EncodingHint>
-                          {channel === 'x' && 'Usually numbers or dates for x-axis'}
-                          {channel === 'y' && 'Usually numbers for y-axis'}
-                          {channel === 'color' && 'Categories work well for color'}
-                          {channel === 'size' && 'Numbers work best for size'}
-                        </EncodingHint>
-                      </>
+                      <TypeButtons>
+                        {[
+                          { type: 'quantitative', icon: <NumbersIcon />, label: 'Number' },
+                          { type: 'temporal', icon: <TimelineIcon />, label: 'Time' },
+                          { type: 'nominal', icon: <CategoryIcon />, label: 'Category' },
+                          { type: 'ordinal', icon: <BarChartIcon />, label: 'Ordered' }
+                        ].map(({ type, icon, label }) => {
+                          const field = encodings[channel]?.field;
+                          const compatibleTypes = field ? 
+                            getCompatibleTypes(field, spec.data?.values || []) : 
+                            [];
+                          
+                          const isCompatible = compatibleTypes.includes(type);
+                          
+                          return (
+                            <Tooltip key={type} title={label}>
+                              <span>
+                                <EncodingTypeButton 
+                                  $active={encodings[channel]?.type === type}
+                                  $compatible={isCompatible}
+                                  onClick={() => isCompatible && handleEncodingChange(channel, { type })}
+                                  size="small"
+                                  disabled={!isCompatible}
+                                >
+                                  {icon}
+                                </EncodingTypeButton>
+                              </span>
+                            </Tooltip>
+                          );
+                        })}
+                      </TypeButtons>
                     )}
                   </EncodingControl>
                 </EncodingGrid>
               </Control>
             ))}
           </div>
-        </AccordionContent>
-      </Accordion>
+        </TabContent>
+      )}
     </Container>
   )
 }

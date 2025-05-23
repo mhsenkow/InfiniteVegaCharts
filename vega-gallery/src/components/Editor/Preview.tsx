@@ -9,22 +9,47 @@ import { ExtendedSpec } from '../../types/vega'
 const PreviewContainer = styled.div`
   display: flex;
   flex-direction: column;
+  width: 100%;
   height: 100%;
   overflow: hidden;
 `
 
-const ChartContainer = styled.div<{ $height: number }>`
+const ChartContainer = styled.div<{ $height: number; $isActive?: boolean }>`
   height: ${props => props.$height}px;
   min-height: 200px;
   position: relative;
   padding-bottom: 6px;
   width: 100%;
+  cursor: ${props => props.$isActive ? 'default' : 'pointer'};
+  display: flex;
+  justify-content: center;
+  align-items: center;
   
   /* Make the Vega chart responsive */
   .vega-embed {
     width: 100% !important;
     height: 100% !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
+
+  .vega-embed .marks {
+    max-width: 100%;
+  }
+  
+  ${props => !props.$isActive && `
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.02);
+      pointer-events: none;
+    }
+  `}
 `
 
 const DataContainer = styled.div`
@@ -197,10 +222,12 @@ const DownloadOption = styled.button`
 interface PreviewProps {
   spec: string | TopLevelSpec | ExtendedSpec;
   renderKey?: number;
+  onVegaViewUpdate?: (view: any) => void;
 }
 
-export const Preview = ({ spec, renderKey = 0 }: PreviewProps) => {
+export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps) => {
   const chartRef = useRef<HTMLDivElement>(null)
+  const chartContentRef = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [sampleSize, setSampleSize] = useState(10)
   const [chartHeight, setChartHeight] = useState(400)
@@ -209,6 +236,9 @@ export const Preview = ({ spec, renderKey = 0 }: PreviewProps) => {
   const [selectedRatio, setSelectedRatio] = useState<AspectRatio>(ASPECT_RATIOS[0])
   const containerRef = useRef<HTMLDivElement>(null)
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
+  const [chartActive, setChartActive] = useState(false)
+  const [vegaViewReady, setVegaViewReady] = useState(false)
+  const currentViewRef = useRef<any>(null)
 
   // Fix the type issues in parsedSpec creation
   const parsedSpec = useMemo(() => {
@@ -222,6 +252,22 @@ export const Preview = ({ spec, renderKey = 0 }: PreviewProps) => {
     }
     return spec;
   }, [spec]);
+
+  // Clean up Vega view when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clean up the view when component unmounts
+      if (currentViewRef.current) {
+        console.log('Cleaning up Vega view');
+        try {
+          currentViewRef.current.finalize();
+        } catch (e) {
+          console.error('Error finalizing Vega view:', e);
+        }
+        currentViewRef.current = null;
+      }
+    };
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true)
@@ -262,13 +308,23 @@ export const Preview = ({ spec, renderKey = 0 }: PreviewProps) => {
     }
   }, [isDragging])
 
-  // Update the renderChart function to safely access properties
   const renderChart = useCallback(async () => {
-    if (!chartRef.current) return;
+    if (!chartRef.current || !chartContentRef.current) return;
     
+    // If there's an existing view, clean it up first
+    if (currentViewRef.current) {
+      try {
+        console.log('Finalizing existing view before re-render');
+        currentViewRef.current.finalize();
+        currentViewRef.current = null;
+      } catch (e) {
+        console.error('Error finalizing existing view:', e);
+      }
+    }
+     
     try {
-      // Force a clean render by removing previous chart
-      chartRef.current.innerHTML = `<div style="width: 100%; height: 100%;" key="${renderKey}"></div>`;
+      // Clear previous content safely
+      chartContentRef.current.innerHTML = '';
       
       // Create a safely typed spec for rendering
       const renderSpec = {
@@ -286,26 +342,88 @@ export const Preview = ({ spec, renderKey = 0 }: PreviewProps) => {
         }
       };
       
-      await renderVegaLite(chartRef.current, renderSpec);
+      console.log('Rendering chart with spec:', renderSpec);
+      
+      // Render the chart and get the view
+      const view = await renderVegaLite(chartContentRef.current, renderSpec);
+      
+      // Store the view reference
+      currentViewRef.current = view;
+      
+      // If view is available, update state and callback
+      if (view) {
+        console.log('Vega view successfully created');
+        setVegaViewReady(true);
+        setChartActive(true);
+        
+        // If callback is provided, pass the view
+        if (onVegaViewUpdate) {
+          console.log('Updating Vega view reference in parent component');
+          onVegaViewUpdate(view);
+        }
+      } else {
+        console.warn('renderVegaLite returned no view');
+        setVegaViewReady(false);
+        
+        // Reset the view reference in parent if no view is available
+        if (onVegaViewUpdate) {
+          onVegaViewUpdate(null);
+        }
+      }
+      
       setError(null);
     } catch (err) {
       console.error('Error rendering chart:', err);
       setError(err instanceof Error ? err.message : 'Failed to render chart');
+      setVegaViewReady(false);
+      
+      // Reset the view if there's an error
+      currentViewRef.current = null;
+      if (onVegaViewUpdate) {
+        onVegaViewUpdate(null);
+      }
     }
-  }, [parsedSpec, renderKey]);
+  }, [parsedSpec, renderKey, onVegaViewUpdate]);
 
-  // Ensure renderChart is called whenever renderKey changes
+  // Ensure chart is rendered when component mounts or spec changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      console.log('Initial chart render');
+      renderChart().then(() => {
+        // Automatically activate the chart when it's rendered
+        if (currentViewRef.current) {
+          setChartActive(true);
+          setVegaViewReady(true);
+          if (onVegaViewUpdate) {
+            console.log('Auto-activating chart and updating parent view reference');
+            onVegaViewUpdate(currentViewRef.current);
+          }
+        }
+      });
+    }, 200); // Slightly longer timeout to ensure DOM is ready
+    return () => clearTimeout(timeoutId);
+  }, [renderChart, onVegaViewUpdate]);
+
+  // Add a separate effect to ensure chart is re-rendered when renderKey changes
   useEffect(() => {
     if (renderKey > 0) {
       console.log('Rendering chart with key:', renderKey);
-      renderChart();
+      const timeoutId = setTimeout(() => {
+        renderChart().then(() => {
+          // Auto-activate on re-render as well
+          if (currentViewRef.current) {
+            setChartActive(true);
+            setVegaViewReady(true);
+            if (onVegaViewUpdate) {
+              console.log('View updated after renderKey change');
+              onVegaViewUpdate(currentViewRef.current);
+            }
+          }
+        });
+      }, 200);
+      return () => clearTimeout(timeoutId);
     }
-  }, [renderKey, renderChart]);
-
-  // Add renderKey to dependencies for the original effect 
-  useEffect(() => {
-    renderChart();
-  }, [sampleSize, renderKey, renderChart]);
+  }, [renderKey, renderChart, onVegaViewUpdate]);
 
   // Handle resize
   useEffect(() => {
@@ -417,6 +535,23 @@ export const Preview = ({ spec, renderKey = 0 }: PreviewProps) => {
     img.src = url;
   }, []);
 
+  const handleChartClick = useCallback(() => {
+    console.log('Chart clicked, force activating...');
+    
+    // Force re-render of the chart to ensure view is available
+    renderChart().then(() => {
+      // If view is now available, make sure to update parent
+      if (currentViewRef.current && onVegaViewUpdate) {
+        console.log('View available after click, updating parent');
+        setChartActive(true);
+        setVegaViewReady(true);
+        onVegaViewUpdate(currentViewRef.current);
+      } else {
+        console.warn('Failed to create view after click');
+      }
+    });
+  }, [renderChart, onVegaViewUpdate]);
+
   return (
     <PreviewContainer ref={containerRef}>
       <AspectRatioControl>
@@ -456,8 +591,31 @@ export const Preview = ({ spec, renderKey = 0 }: PreviewProps) => {
         </DownloadMenu>
       </ChartControls>
 
-      <ChartContainer ref={chartRef} $height={chartHeight}>
-        <div style={{ width: '100%', height: '100%' }} />
+      <ChartContainer 
+        ref={chartRef} 
+        $height={chartHeight}
+        $isActive={chartActive && vegaViewReady}
+        onClick={handleChartClick}
+      >
+        <div 
+          ref={chartContentRef}
+          style={{ width: '100%', height: '100%' }}
+        />
+        {(!chartActive || !vegaViewReady) && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: '#6c757d',
+            textAlign: 'center',
+            pointerEvents: 'none',
+            opacity: 0.7,
+            fontSize: '0.9rem'
+          }}>
+            {!chartActive ? 'Click to activate chart' : 'Waiting for chart to initialize...'}
+          </div>
+        )}
       </ChartContainer>
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {selectedRatio.width === 0 && (
