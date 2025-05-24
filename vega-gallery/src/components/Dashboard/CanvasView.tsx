@@ -25,7 +25,7 @@ const CanvasContainer = styled.div`
   flex-grow: 1;
   position: relative;
   overflow: hidden;
-  background-color: #f8f9fa;
+  background-color: var(--color-background);
   border-radius: 8px;
   min-height: 600px;
 `;
@@ -44,29 +44,29 @@ const CanvasButton = styled.button`
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background-color: white;
-  border: 1px solid #ced4da;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  color: #495057;
+  box-shadow: 0 2px 8px ${props => props.theme.mode === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)'};
+  color: var(--color-text-primary);
   transition: all 0.2s ease;
   
   &:hover {
-    background-color: #f8f9fa;
+    background-color: var(--color-background);
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 12px ${props => props.theme.mode === 'dark' ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.25)'};
   }
   
   &.add-chart {
-    background-color: ${props => props.theme.colors.primary};
-    color: white;
+    background-color: var(--color-primary);
+    color: var(--color-surface);
   }
   
   &.add-chart:hover {
-    background-color: #1976d2;
+    background-color: var(--color-primary);
   }
 `;
 
@@ -90,8 +90,8 @@ const PanCue = styled.div`
   position: fixed;
   top: 20px;
   left: 20px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
+  background-color: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.7)'};
+  color: var(--color-surface);
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 0.9rem;
@@ -126,13 +126,13 @@ const ChartNodeContainer = styled.div<{
   top: ${props => props.$y}px;
   width: ${props => props.$width}px;
   height: ${props => props.$height}px;
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
   box-shadow: ${props => props.$isDragging 
-    ? '0 8px 16px rgba(0,0,0,0.15)' 
+    ? props.theme.mode === 'dark' ? '0 8px 16px rgba(0,0,0,0.5)' : '0 8px 16px rgba(0,0,0,0.15)' 
     : props.$active 
-      ? '0 0 0 2px #1976d2, 0 2px 8px rgba(0,0,0,0.1)'
-      : '0 2px 8px rgba(0,0,0,0.1)'};
+      ? props.theme.mode === 'dark' ? '0 0 0 2px var(--color-primary), 0 2px 8px rgba(0,0,0,0.3)' : '0 0 0 2px var(--color-primary), 0 2px 8px rgba(0,0,0,0.1)'
+      : props.theme.mode === 'dark' ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.1)'};
   display: flex;
   flex-direction: column;
   user-select: none;
@@ -143,8 +143,8 @@ const ChartNodeContainer = styled.div<{
 
 const NodeHeader = styled.div`
   padding: 8px 12px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background-color: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -155,7 +155,7 @@ const NodeHeader = styled.div`
 const NodeTitle = styled.div`
   font-weight: 500;
   font-size: 0.9rem;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -207,7 +207,7 @@ const ActionButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   padding: 4px;
   display: flex;
   align-items: center;
@@ -215,8 +215,8 @@ const ActionButton = styled.button`
   border-radius: 4px;
   
   &:hover {
-    background-color: #f1f3f5;
-    color: #dc3545;
+    background-color: var(--color-surface-hover);
+    color: var(--color-error);
   }
 `;
 
@@ -237,8 +237,8 @@ const ResizeHandle = styled.div`
     bottom: 4px;
     width: 8px;
     height: 8px;
-    border-right: 2px solid #adb5bd;
-    border-bottom: 2px solid #adb5bd;
+    border-right: 2px solid var(--color-text-tertiary);
+    border-bottom: 2px solid var(--color-text-tertiary);
   }
 `;
 
@@ -249,7 +249,7 @@ const EmptyState = styled.div`
   justify-content: center;
   height: 100%;
   min-height: 400px;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   text-align: center;
   padding: 32px;
 `;
@@ -258,8 +258,8 @@ const Notification = styled.div<{ $visible: boolean }>`
   position: fixed;
   top: 20px;
   right: 20px;
-  background-color: ${props => props.theme.colors.primary};
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-surface);
   padding: 12px 16px;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
@@ -474,7 +474,7 @@ const ChartNode: React.FC<ChartNodeProps> = ({
             <Tooltip title={`Source: ${chart.snapshot.source}`}>
               <InfoOutlinedIcon 
                 fontSize="small" 
-                style={{ color: '#6c757d', cursor: 'pointer', fontSize: '18px' }}
+                style={{ color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: '18px' }}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleInfoOpen();
@@ -791,7 +791,7 @@ export const CanvasView: React.FC = () => {
           bottom: '80px',
           right: '30px',
           background: 'rgba(52, 58, 64, 0.9)',
-          color: 'white',
+          color: 'var(--color-surface)',
           padding: '12px 16px',
           borderRadius: '8px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.2)',

@@ -4,9 +4,9 @@ import { DatasetMetadata } from '../../types/dataset';
 
 const Panel = styled.div`
   padding: 16px;
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   margin-bottom: 16px;
 `;
 
@@ -17,13 +17,13 @@ const Section = styled.div`
 const SectionTitle = styled.h3`
   font-size: 1.1rem;
   margin-bottom: 16px;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
 `;
 
 const TransformControl = styled.div`
   margin-bottom: 12px;
   padding: 12px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 6px;
 `;
 
@@ -31,7 +31,7 @@ const Select = styled.select`
   width: 100%;
   padding: 8px;
   margin-bottom: 8px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 4px;
 `;
 
@@ -39,14 +39,14 @@ const Input = styled.input`
   width: 100%;
   padding: 8px;
   margin-bottom: 8px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 4px;
 `;
 
 const Button = styled.button`
   padding: 8px 16px;
-  background: ${props => props.theme.colors.primary};
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;

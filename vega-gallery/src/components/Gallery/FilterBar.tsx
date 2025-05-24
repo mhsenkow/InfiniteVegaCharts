@@ -8,9 +8,9 @@ const Container = styled.div`
   align-items: center;
   flex-wrap: wrap;
   padding: 16px;
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
 `
 
 const FilterGroup = styled.div`
@@ -21,33 +21,33 @@ const FilterGroup = styled.div`
 
 const Label = styled.label`
   font-weight: 500;
-  color: ${props => props.theme.colors.text};
+  color: var(--color-text);
 `
 
 const Select = styled.select`
   padding: 6px 12px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: white;
+  background: var(--color-surface);
   font-size: 0.9rem;
-  color: ${props => props.theme.colors.text};
+  color: var(--color-text);
   cursor: pointer;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: var(--color-primary);
   }
 `
 
 const SearchInput = styled.input`
   padding: 6px 12px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 0.9rem;
   min-width: 200px;
 
   &:focus {
     outline: none;
-    border-color: ${props => props.theme.colors.primary};
+    border-color: var(--color-primary);
   }
 `
 

@@ -7,7 +7,7 @@ import { renderVegaLite } from '../../utils/chartRenderer';
 
 const CanvasContainer = styled.div`
   padding: 20px;
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   margin-bottom: 20px;
@@ -17,13 +17,13 @@ const CanvasContainer = styled.div`
 const CanvasTitle = styled.h3`
   margin-top: 0;
   margin-bottom: 16px;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   font-size: 1.1rem;
 `;
 
 const DashboardCanvas = styled.div<{ $rows: number; $height: number }>`
-  background-color: #f8f9fa;
-  border: 1px dashed #ced4da;
+  background-color: var(--color-background);
+  border: 1px dashed var(--color-border);
   border-radius: 8px;
   min-height: ${props => props.$height}px;
   position: relative;
@@ -42,7 +42,7 @@ const DashboardCanvas = styled.div<{ $rows: number; $height: number }>`
 `;
 
 const ChartSlot = styled.div<{ $isResizing?: boolean }>`
-  background-color: white;
+  background-color: var(--color-surface);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -59,8 +59,8 @@ const ChartSlot = styled.div<{ $isResizing?: boolean }>`
 
 const ChartHeader = styled.div`
   padding: 8px 12px;
-  background-color: #f1f3f5;
-  border-bottom: 1px solid #e9ecef;
+  background-color: var(--color-surfaceHover);
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -69,7 +69,7 @@ const ChartHeader = styled.div`
 const ChartTitle = styled.div`
   font-weight: 500;
   font-size: 0.9rem;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
 `;
 
 const ChartContent = styled.div`
@@ -114,7 +114,7 @@ const EmptySlot = styled.div`
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #adb5bd;
+  color: var(--color-text-tertiary);
   font-size: 0.9rem;
   text-align: center;
   padding: 16px;
@@ -122,7 +122,7 @@ const EmptySlot = styled.div`
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: #f1f3f5;
+    background-color: var(--color-surfaceHover);
   }
 `;
 
@@ -149,7 +149,7 @@ const SnapshotGrid = styled.div`
 `;
 
 const SnapshotCard = styled.div`
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
@@ -182,8 +182,8 @@ const CloseButton = styled.button`
   position: absolute;
   top: 8px;
   right: 8px;
-  background-color: white;
-  border: 1px solid #ced4da;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -194,14 +194,14 @@ const CloseButton = styled.button`
   font-size: 14px;
   
   &:hover {
-    background-color: #f8f9fa;
+    background-color: var(--color-background);
   }
 `;
 
 const Button = styled.button<{ $primary?: boolean }>`
   padding: 8px 16px;
   background: ${props => props.$primary ? props.theme.colors.primary : '#f1f3f5'};
-  color: ${props => props.$primary ? 'white' : props.theme.text.primary};
+  color: ${props => props.$primary ? 'white' : props.theme.colors.text.primary};
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -234,7 +234,7 @@ const SpinnerIcon = styled.div`
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  border-top-color: white;
+  border-top-color: var(--color-surface);
   animation: spin 1s ease-in-out infinite;
   
   @keyframes spin {
@@ -253,8 +253,8 @@ const CanvasControls = styled.div`
 const CanvasSelector = styled.select`
   padding: 8px 12px;
   border-radius: 4px;
-  border: 1px solid #ced4da;
-  background-color: white;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
   font-size: 0.9rem;
   min-width: 200px;
 `;
@@ -262,8 +262,8 @@ const CanvasSelector = styled.select`
 const CanvasNameInput = styled.input`
   padding: 8px 12px;
   border-radius: 4px;
-  border: 1px solid #ced4da;
-  background-color: white;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
   font-size: 0.9rem;
   min-width: 200px;
   flex: 1;
@@ -287,7 +287,7 @@ const ResizeHandle = styled.div`
     content: '';
     width: 60px;
     height: 4px;
-    background: #ced4da;
+    background: var(--color-border);
     border-radius: 2px;
     opacity: 0.7;
     transition: all 0.2s ease;
@@ -296,12 +296,12 @@ const ResizeHandle = styled.div`
   &:hover::after {
     opacity: 1;
     transform: scaleY(1.5);
-    background: #adb5bd;
+    background: var(--color-text-tertiary);
   }
 
   &:active::after {
     opacity: 1;
-    background: ${props => props.theme.colors.primary};
+    background: var(--color-primary);
     transform: scaleY(1.5);
   }
 `;
@@ -319,8 +319,8 @@ const CircleButton = styled.button`
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: ${props => props.theme.colors.primary};
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-size: 1.5rem;
   display: flex;
   align-items: center;
@@ -335,8 +335,8 @@ const CircleButton = styled.button`
   }
   
   &:disabled {
-    background: #e9ecef;
-    color: #adb5bd;
+    background: var(--color-border);
+    color: var(--color-text-tertiary);
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
@@ -831,7 +831,7 @@ export const CanvasArea = () => {
           <Button
             onClick={deleteSelectedCanvas}
             disabled={isLoading}
-            style={{ background: '#f8d7da', color: '#842029' }}
+            style={{ background: 'var(--color-error-light)', color: 'var(--color-error)' }}
           >
             Delete
           </Button>
@@ -867,13 +867,13 @@ export const CanvasArea = () => {
                   <ChartTitle>{slot.snapshot.name}</ChartTitle>
                   <button 
                     onClick={(e) => handleClearSlot(index, e)}
-                    style={{ 
-                      background: 'none', 
-                      border: 'none', 
-                      cursor: 'pointer',
-                      fontSize: '0.8rem',
-                      color: '#6c757d'
-                    }}
+                                          style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        color: 'var(--color-text-secondary)'
+                      }}
                   >
                     ×
                   </button>

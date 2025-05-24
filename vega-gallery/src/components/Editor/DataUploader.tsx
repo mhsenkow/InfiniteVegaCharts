@@ -20,7 +20,7 @@ const UploadButton = styled.label`
   padding: 8px 12px;
   border-radius: 4px;
   background-color: #f0f0f0;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   cursor: pointer;
   transition: all 0.2s;
   
@@ -39,7 +39,7 @@ const DropArea = styled.div<{ $isDragging: boolean }>`
   background-color: ${props => props.$isDragging ? 'rgba(77, 171, 247, 0.1)' : '#f8f9fa'};
   
   &:hover {
-    border-color: #4dabf7;
+    border-color: var(--color-primary);
     background-color: rgba(77, 171, 247, 0.1);
   }
 `;

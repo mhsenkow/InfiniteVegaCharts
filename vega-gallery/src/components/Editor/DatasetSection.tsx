@@ -13,21 +13,21 @@ const Section = styled.div`
 
 const Title = styled.h2`
   font-size: 1.2rem;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   margin-bottom: 16px;
 `;
 
 const UploadArea = styled.div`
-  border: 2px dashed ${props => props.theme.colors.border};
+  border: 2px dashed var(--color-border);
   border-radius: 8px;
   padding: 20px;
   text-align: center;
-  background: #f8f9fa;
+  background: var(--color-background);
   transition: all 0.2s ease;
   
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    background: #f1f3f5;
+    border-color: var(--color-primary);
+    background: var(--color-surface-hover);
   }
 `;
 
@@ -41,8 +41,8 @@ const FileInput = styled.div`
 const UploadButton = styled.button<{ $disabled: boolean }>`
   width: 100%;
   padding: 10px;
-  background: ${props => props.$disabled ? '#e9ecef' : props.theme.colors.primary};
-  color: white;
+  background: ${props => props.$disabled ? 'var(--color-surface-hover)' : 'var(--color-primary)'};
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
@@ -61,22 +61,22 @@ const DatasetList = styled.div`
 
 const DatasetCard = styled.button<{ $active: boolean }>`
   padding: 12px;
-  background: white;
-  border: 2px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
+  background: var(--color-surface);
+  border: 2px solid ${props => props.$active ? 'var(--color-primary)' : 'var(--color-border)'};
   border-radius: 8px;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.$active ? 'white' : '#f8f9fa'};
+    border-color: var(--color-primary);
+    background: ${props => props.$active ? 'var(--color-surface)' : 'var(--color-surface-hover)'};
   }
 `;
 
 const DatasetName = styled.div`
   font-weight: 500;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -84,8 +84,8 @@ const DatasetName = styled.div`
 `;
 
 const TransformedBadge = styled.span`
-  background-color: #f0f4c3;
-  color: #33691e;
+  background-color: ${props => props.theme.mode === 'dark' ? '#2c3308' : '#f0f4c3'};
+  color: ${props => props.theme.mode === 'dark' ? '#c5e1a5' : '#33691e'};
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.7rem;
@@ -96,12 +96,12 @@ const DatasetInfo = styled.div`
   display: flex;
   gap: 16px;
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const EditableDatasetName = styled.input`
   font-weight: 500;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   border: 1px solid transparent;
   background: transparent;
   padding: 4px 8px;
@@ -109,13 +109,13 @@ const EditableDatasetName = styled.input`
   width: 100%;
 
   &:hover {
-    border-color: ${props => props.theme.colors.border};
+    border-color: var(--color-border);
   }
 
   &:focus {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: var(--color-primary);
     outline: none;
-    background: white;
+    background: var(--color-surface);
   }
 `;
 
@@ -177,6 +177,7 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
         columnCount: Object.keys(displaySample[0] || {}).length,
         source: 'upload',
         uploadDate: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
         dataTypes: detectDataTypes(displaySample)
       };
 
@@ -286,8 +287,8 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
             onClick={() => fileInputRef.current?.click()}
             style={{
               padding: '8px 16px',
-              background: '#212529',
-              color: 'white',
+              background: 'var(--color-text-primary)',
+              color: 'var(--color-surface)',
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer'
@@ -295,7 +296,7 @@ export const DatasetSection = ({ onDatasetLoad }: DatasetSectionProps) => {
           >
             Choose File
           </button>
-          <span style={{ color: '#495057' }}>
+          <span style={{ color: 'var(--color-text-primary)' }}>
             {selectedFile?.name || 'No file chosen'}
           </span>
         </FileInput>
@@ -324,25 +325,25 @@ const Table = styled.table`
   th, td {
     padding: 12px;
     text-align: left;
-    border-bottom: 1px solid ${props => props.theme.colors.border};
+    border-bottom: 1px solid var(--color-border);
   }
 
   th {
     font-weight: 500;
-    color: ${props => props.theme.text.secondary};
-    background: #f8f9fa;
+    color: var(--color-text-secondary);
+    background: var(--color-background);
   }
 `;
 
 const DeleteButton = styled.button`
   padding: 4px 8px;
-  background: #dc3545;
-  color: white;
+  background: var(--color-error);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;
 
   &:hover {
-    background: #c82333;
+    background: var(--color-error-dark, #c82333);
   }
 `; 

@@ -314,6 +314,38 @@ export const renderVegaLite = async (
  * all required properties are set correctly.
  */
 const processVegaLiteSpec = (spec: ExtendedSpec): any => {
+  // Create a deep copy of the spec to avoid modifying the original
+  const processedSpec = JSON.parse(JSON.stringify(spec));
+  
+  // Detect if we're in dark mode
+  const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+  
+  // Apply dark mode theme to chart if needed
+  if (isDarkMode && processedSpec.config) {
+    // Create or update the config object
+    processedSpec.config = {
+      ...processedSpec.config,
+      background: 'var(--color-surface)',
+      axis: {
+        ...processedSpec.config?.axis,
+        domainColor: 'var(--color-border)',
+        gridColor: 'rgba(255, 255, 255, 0.1)',
+        tickColor: 'var(--color-border)',
+        labelColor: 'var(--color-text-secondary)',
+        titleColor: 'var(--color-text-primary)'
+      },
+      legend: {
+        ...processedSpec.config?.legend,
+        labelColor: 'var(--color-text-secondary)',
+        titleColor: 'var(--color-text-primary)'
+      },
+      title: {
+        ...processedSpec.config?.title,
+        color: 'var(--color-text-primary)'
+      }
+    };
+  }
+  
   // Helper to determine if mark should be filled
   const shouldFillMark = (markType: string | undefined) => {
     if (!markType) return false;
@@ -330,21 +362,21 @@ const processVegaLiteSpec = (spec: ExtendedSpec): any => {
 
   // Check if we're dealing with a parallel coordinates chart
   const isParallelCoordinates = 
-    (typeof spec.mark === 'string' && spec.mark === 'parallel-coordinates') || 
-    (typeof spec.mark === 'object' && spec.mark?.type === 'parallel-coordinates');
+    (typeof processedSpec.mark === 'string' && processedSpec.mark === 'parallel-coordinates') || 
+    (typeof processedSpec.mark === 'object' && processedSpec.mark?.type === 'parallel-coordinates');
 
   // Check if we're dealing with a word cloud chart
   const isWordCloud = 
-    (typeof spec.mark === 'string' && spec.mark === 'wordcloud') || 
-    (typeof spec.mark === 'object' && spec.mark?.type === 'wordcloud');
+    (typeof processedSpec.mark === 'string' && processedSpec.mark === 'wordcloud') || 
+    (typeof processedSpec.mark === 'object' && processedSpec.mark?.type === 'wordcloud');
 
-  let renderedSpec: any = { ...spec };
+  let renderedSpec: any = { ...processedSpec };
 
   // Make a deep copy of the spec to avoid mutation issues
   if (isParallelCoordinates) {
     // For parallel coordinates, we need to ensure we use a line mark type
     renderedSpec = { 
-      ...spec,
+      ...processedSpec,
       mark: { 
         type: 'line', 
         opacity: 0.5,
@@ -354,7 +386,7 @@ const processVegaLiteSpec = (spec: ExtendedSpec): any => {
   } else if (isWordCloud) {
     // For word cloud, we need to ensure we use a text mark type
     renderedSpec = {
-      ...spec,
+      ...processedSpec,
       mark: {
         type: 'text',
         baseline: 'middle',

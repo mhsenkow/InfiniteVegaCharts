@@ -18,14 +18,14 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background-color: white;
+  background-color: var(--color-surface);
   border-radius: 8px;
   width: 90%;
   max-width: 800px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 5px 15px ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.3)'};
   overflow: hidden;
 `;
 
@@ -34,12 +34,12 @@ const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--color-border);
 `;
 
 const ModalTitle = styled.h3`
   margin: 0;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   font-size: 1.25rem;
 `;
 
@@ -47,7 +47,7 @@ const CloseButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -55,13 +55,13 @@ const CloseButton = styled.button`
   border-radius: 4px;
   
   &:hover {
-    background-color: #f1f3f5;
+    background-color: var(--color-surface-hover);
   }
 `;
 
 const SearchContainer = styled.div`
   padding: 16px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--color-border);
   position: relative;
 `;
 
@@ -69,13 +69,13 @@ const SearchInput = styled.input`
   width: 100%;
   padding: 10px 16px 10px 40px;
   border-radius: 4px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--color-border);
   font-size: 1rem;
   outline: none;
   
   &:focus {
-    border-color: ${props => props.theme.colors.primary};
-    box-shadow: 0 0 0 2px ${props => props.theme.colors.primary}30;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary)30;
   }
 `;
 
@@ -84,7 +84,7 @@ const SearchIcon1 = styled.div`
   left: 28px;
   top: 50%;
   transform: translateY(-50%);
-  color: #adb5bd;
+  color: var(--color-text-tertiary);
 `;
 
 const SnapshotGrid = styled.div`
@@ -100,34 +100,34 @@ const SnapshotGrid = styled.div`
   }
   
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: ${props => props.theme.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'};
     border-radius: 4px;
   }
   
   &::-webkit-scrollbar-thumb {
-    background: #ccc;
+    background: ${props => props.theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'};
     border-radius: 4px;
     
     &:hover {
-      background: #bbb;
+      background: ${props => props.theme.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'};
     }
   }
 `;
 
 const SnapshotCard = styled.div`
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--color-surface);
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-color: ${props => props.theme.colors.primary};
+    box-shadow: 0 4px 8px ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.1)'};
+    border-color: var(--color-primary);
   }
 `;
 
@@ -136,7 +136,7 @@ const SnapshotThumbnail = styled.div<{ $thumbnail?: string }>`
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f8f9fa;
+  background-color: var(--color-background);
   background-image: ${props => props.$thumbnail ? `url(${props.$thumbnail})` : 'none'};
   background-size: contain;
   background-position: center;
@@ -150,7 +150,7 @@ const SnapshotDetails = styled.div`
 const SnapshotName = styled.div`
   font-weight: 500;
   margin-bottom: 4px;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -158,13 +158,13 @@ const SnapshotName = styled.div`
 
 const SnapshotDate = styled.div`
   font-size: 0.8rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const NoResults = styled.div`
   text-align: center;
   padding: 32px;
-  color: #6c757d;
+  color: var(--color-text-secondary);
 `;
 
 interface ChartSelectorProps {

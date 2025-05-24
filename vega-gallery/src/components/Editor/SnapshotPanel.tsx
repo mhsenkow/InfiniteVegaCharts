@@ -6,7 +6,7 @@ import { DatasetMetadata } from '../../types/dataset';
 
 const PanelContainer = styled.div`
   padding: 16px;
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
@@ -15,7 +15,7 @@ const PanelContainer = styled.div`
 const Title = styled.h3`
   margin-top: 0;
   margin-bottom: 16px;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   font-size: 1.1rem;
 `;
 
@@ -27,7 +27,7 @@ const SnapshotGrid = styled.div`
 `;
 
 const SnapshotCard = styled.div`
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
@@ -54,7 +54,7 @@ const SnapshotInfo = styled.div`
 
 const SnapshotName = styled.div`
   font-weight: 500;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -63,7 +63,7 @@ const SnapshotName = styled.div`
 
 const SnapshotDate = styled.div`
   font-size: 0.8rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const ActionButtons = styled.div`
@@ -75,7 +75,7 @@ const ActionButtons = styled.div`
 const Button = styled.button<{ $primary?: boolean; $disabled?: boolean }>`
   padding: 6px 12px;
   background: ${props => props.$disabled ? '#e9ecef' : props.$primary ? props.theme.colors.primary : '#f1f3f5'};
-  color: ${props => props.$disabled ? '#adb5bd' : props.$primary ? 'white' : props.theme.text.primary};
+  color: ${props => props.$disabled ? '#adb5bd' : props.$primary ? 'white' : props.theme.colors.text.primary};
   border: none;
   border-radius: 4px;
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
@@ -89,7 +89,7 @@ const Button = styled.button<{ $primary?: boolean; $disabled?: boolean }>`
 const DeleteButton = styled.button`
   padding: 4px 8px;
   background: transparent;
-  color: #dc3545;
+  color: var(--color-error);
   border: none;
   font-size: 0.8rem;
   cursor: pointer;
@@ -103,10 +103,10 @@ const DeleteButton = styled.button`
 const EmptyState = styled.div`
   text-align: center;
   padding: 20px;
-  color: ${props => props.theme.text.secondary};
-  background: #f8f9fa;
+  color: var(--color-text-secondary);
+  background: var(--color-background);
   border-radius: 8px;
-  border: 1px dashed ${props => props.theme.colors.border};
+  border: 1px dashed var(--color-border);
 `;
 
 const StatusMessage = styled.div<{ $error?: boolean }>`

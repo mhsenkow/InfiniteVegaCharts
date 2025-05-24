@@ -17,9 +17,9 @@ const ControlButton = styled.button`
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: white;
+  background: var(--color-surface);
   font-size: 13px;
   cursor: pointer;
   

@@ -33,8 +33,8 @@ const DatasetList = styled.div`
 const DatasetCard = styled.div<{ $active: boolean }>`
   width: 100%;
   padding: 12px;
-  background: white;
-  border: 2px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
+  background: var(--color-surface);
+  border: 2px solid ${props => props.$active ? 'var(--color-primary)' : 'var(--color-border)'};
   border-radius: 8px;
   text-align: left;
   cursor: pointer;
@@ -44,36 +44,36 @@ const DatasetCard = styled.div<{ $active: boolean }>`
   align-items: center;
   
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.$active ? 'white' : '#f8f9fa'};
+    border-color: var(--color-primary);
+    background: ${props => props.$active ? 'var(--color-surface)' : 'var(--color-surface-hover)'};
   }
 `
 
 const DatasetCardButton = styled.button<{ $active: boolean }>`
   width: 100%;
   padding: 12px;
-  background: white;
-  border: 2px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
+  background: var(--color-surface);
+  border: 2px solid ${props => props.$active ? 'var(--color-primary)' : 'var(--color-border)'};
   border-radius: 8px;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
   
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.$active ? 'white' : '#f8f9fa'};
+    border-color: var(--color-primary);
+    background: ${props => props.$active ? 'var(--color-surface)' : 'var(--color-surface-hover)'};
   }
 `
 
 const DatasetName = styled.div`
   font-weight: 500;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   margin-bottom: 4px;
 `
 
 const DatasetDescription = styled.div`
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
   margin-bottom: 8px;
 `
 
@@ -81,12 +81,12 @@ const DatasetMeta = styled.div`
   display: flex;
   gap: 16px;
   font-size: 0.85rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `
 
 const Badge = styled.span`
   padding: 2px 6px;
-  background: #e9ecef;
+  background: var(--color-border);
   border-radius: 4px;
   font-size: 0.8rem;
 `
@@ -109,15 +109,15 @@ const DatasetControls = styled.div`
 
 const ClearButton = styled.button`
   padding: 6px 12px;
-  background: #dc3545;
-  color: white;
+  background: var(--color-error);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
 
   &:hover {
-    background: #c82333;
+    background: var(--color-error-dark, #c82333);
   }
 `;
 
@@ -125,7 +125,7 @@ const DeleteButton = styled.button`
   padding: 4px 8px;
   background: none;
   border: none;
-  color: #dc3545;
+  color: var(--color-error);
   cursor: pointer;
   opacity: 0.7;
 
@@ -149,11 +149,11 @@ const TrashIcon = () => (
 const EmptyState = styled.div`
   text-align: center;
   padding: 20px;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 8px;
-  border: 1px dashed ${props => props.theme.colors.border};
+  border: 1px dashed var(--color-border);
 `;
 
 interface DatasetSelectorProps {
@@ -309,7 +309,7 @@ export const DatasetSelector = ({
                     <DatasetMeta>
                       <Badge>Upload</Badge>
                       {dataset.transformed && (
-                        <Badge style={{ backgroundColor: '#f0f4c3', color: '#33691e' }}>Transformed</Badge>
+                        <Badge className="transformed-badge">Transformed</Badge>
                       )}
                       {dataset.uploadDate && (
                         <span>{new Date(dataset.uploadDate).toLocaleDateString()}</span>

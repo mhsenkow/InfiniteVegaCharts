@@ -90,7 +90,7 @@ const EncodingOptionSelect = styled.select`
   width: 100%;
   padding: 4px 8px;
   font-size: 0.875rem;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   margin-top: 4px;
 `;
@@ -133,7 +133,7 @@ const EncodingSuggestionGrid = styled.div`
 `;
 
 const EncodingSuggestionCard = styled.button`
-  background: white;
+  background: var(--color-surface);
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   padding: 12px;
@@ -152,7 +152,7 @@ const EncodingPreview = styled.div`
   color: #666;
   margin-top: 8px;
   font-family: monospace;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--color-border);
   padding-top: 8px;
 `;
 

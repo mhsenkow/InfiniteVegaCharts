@@ -29,7 +29,7 @@ const ErrorDetails = styled.pre`
 
 const ReloadButton = styled.button`
   background-color: #2196f3;
-  color: white;
+  color: var(--color-surface);
   border: none;
   padding: 8px 16px;
   border-radius: 4px;
@@ -38,7 +38,7 @@ const ReloadButton = styled.button`
   margin-top: 16px;
 
   &:hover {
-    background-color: #1976d2;
+    background-color: var(--color-primary);
   }
 `;
 

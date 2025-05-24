@@ -70,7 +70,7 @@ const ChartContainer = styled.div<{ $height: number; $isActive?: boolean; $width
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.02);
+      background: ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.02)'};
       pointer-events: none;
     }
   `}
@@ -79,7 +79,7 @@ const ChartContainer = styled.div<{ $height: number; $isActive?: boolean; $width
 const DataContainer = styled.div`
   flex: 1;
   min-height: 150px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--color-border);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -87,9 +87,9 @@ const DataContainer = styled.div`
 `
 
 const ErrorMessage = styled.div`
-  color: #dc3545;
+  color: var(--color-error);
   padding: 16px;
-  background: #fff5f5;
+  background: ${props => props.theme.mode === 'dark' ? '#372c2c' : '#fff5f5'};
   border-radius: 4px;
   margin-top: 16px;
 `
@@ -111,7 +111,7 @@ const ResizeHandle = styled.div`
     content: '';
     width: 60px;
     height: 4px;
-    background: ${props => props.theme.colors.border};
+    background: var(--color-border);
     border-radius: 2px;
     opacity: 0;
     transition: all 0.2s ease;
@@ -124,7 +124,7 @@ const ResizeHandle = styled.div`
 
   &:active::after {
     opacity: 1;
-    background: ${props => props.theme.colors.primary};
+    background: var(--color-primary);
     transform: scaleY(1.5);
   }
 `
@@ -137,16 +137,16 @@ const SamplingIndicator = styled.div`
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  background: #fffce8;
-  border: 1px solid #ffe58f;
+  background: var(--sampling-indicator-bg);
+  border: 1px solid var(--sampling-indicator-border);
   border-radius: 4px;
   font-size: 12px;
-  color: #755c0d;
+  color: var(--sampling-indicator-text);
   z-index: 100;
   
   svg {
     font-size: 16px;
-    color: #f5a623;
+    color: var(--sampling-indicator-icon);
   }
 `
 
@@ -174,7 +174,7 @@ const AspectRatioControl = styled.div`
   gap: 8px;
   margin-bottom: 8px;
   padding: 8px 12px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 4px;
   overflow-x: auto;
 `;
@@ -196,10 +196,10 @@ const IconOnlyButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
-  border: 1px solid ${props => props.theme.colors.border};
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 6px;
@@ -208,8 +208,8 @@ const IconOnlyButton = styled.button`
   margin: 0 4px;
 
   &:hover {
-    background: #f8f9fa;
-    border-color: ${props => props.theme.colors.primary};
+    background: var(--color-background);
+    border-color: var(--color-primary);
   }
 
   svg {
@@ -219,21 +219,21 @@ const IconOnlyButton = styled.button`
 
 const RatioButton = styled.button<{ $active: boolean }>`
   padding: 6px 12px;
-  border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
+  border: 1px solid ${props => props.$active ? 'var(--color-primary)' : 'var(--color-border)'};
   border-radius: 4px;
-  background: ${props => props.$active ? `${props.theme.colors.primary}10` : 'white'};
-  color: ${props => props.$active ? props.theme.colors.primary : props.theme.text.primary};
+  background: ${props => props.$active ? `rgba(var(--color-primary-rgb), 0.1)` : 'var(--color-surface)'};
+  color: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-text-primary)'};
   cursor: pointer;
   white-space: nowrap;
   font-size: 0.9rem;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: var(--color-primary);
   }
 
   .description {
     font-size: 0.8rem;
-    color: ${props => props.theme.text.secondary};
+    color: var(--color-text-secondary);
     margin-top: 2px;
   }
 `;
@@ -248,10 +248,10 @@ const DownloadOptions = styled.div<{ $show: boolean }>`
   top: 100%;
   right: 0;
   margin-top: 4px;
-  background: white;
-  border: 1px solid ${props => props.theme.colors.border};
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px ${props => props.theme.mode === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.1)'};
   display: ${props => props.$show ? 'block' : 'none'};
   z-index: 10;
   min-width: 150px;
@@ -270,7 +270,7 @@ const DownloadOption = styled.button`
   white-space: nowrap;
 
   &:hover {
-    background: #f8f9fa;
+    background: var(--color-background);
   }
 `;
 

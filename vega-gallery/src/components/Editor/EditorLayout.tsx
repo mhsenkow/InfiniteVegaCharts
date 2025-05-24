@@ -22,9 +22,9 @@ import { CanvasArea } from '../Canvas/CanvasArea';
 const Container = styled.div`
   position: relative;
   height: calc(100vh - 80px);
-  background: white;
+  background: var(--color-surface);
   border-radius: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px ${props => props.theme.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)'};
   overflow: hidden;
   margin-left: 0;
 `
@@ -40,8 +40,8 @@ const EditorPanel = styled.div<{ $isVisible: boolean }>`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  background: #f8f9fa;
+  box-shadow: 0 2px 8px ${props => props.theme.mode === 'dark' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.1)'};
+  background: var(--color-background);
   z-index: 10;
   transition: left 0.3s ease-in-out;
 
@@ -49,15 +49,15 @@ const EditorPanel = styled.div<{ $isVisible: boolean }>`
     width: 6px;
   }
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: ${props => props.theme.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'};
     border-radius: 4px;
   }
   &::-webkit-scrollbar-thumb {
-    background: #ccc;
+    background: ${props => props.theme.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'};
     border-radius: 4px;
     
     &:hover {
-      background: #bbb;
+      background: ${props => props.theme.mode === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'};
     }
   }
 `
@@ -86,20 +86,20 @@ const PreviewContent = styled.div`
 const BackButton = styled.button`
   margin-bottom: 24px;
   padding: 10px 20px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  color: #495057;
+  color: var(--color-text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f1f3f5;
-    color: #2c3e50;
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
   }
 
   &::before {
@@ -113,9 +113,9 @@ const TabContainer = styled.div`
   justify-content: space-around;
   margin-bottom: 12px;
   padding: 8px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 8px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   position: relative;
   
   &::after {
@@ -125,7 +125,7 @@ const TabContainer = styled.div`
     left: 5%;
     width: 90%;
     height: 1px;
-    background: ${props => props.theme.colors.border};
+    background: var(--color-border);
   }
 `
 
@@ -135,16 +135,16 @@ const Tab = styled.button<{ $active: boolean }>`
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: ${props => props.$active ? props.theme.colors.primary + '20' : 'transparent'};
+  background: ${props => props.$active ? 'rgba(var(--color-primary-rgb), 0.12)' : 'transparent'};
   border: none;
   border-radius: 6px;
-  color: ${props => props.$active ? props.theme.colors.primary : props.theme.text.secondary};
+  color: ${props => props.$active ? 'var(--color-primary)' : 'var(--color-text-secondary)'};
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
 
   &:hover {
-    background: ${props => props.$active ? props.theme.colors.primary + '20' : '#f1f3f5'};
+    background: ${props => props.$active ? 'rgba(var(--color-primary-rgb), 0.12)' : 'var(--color-surface-hover)'};
     
     &::after {
       content: attr(data-tooltip);
@@ -152,8 +152,8 @@ const Tab = styled.button<{ $active: boolean }>`
       top: 100%;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
+      background: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)'};
+      color: ${props => props.theme.mode === 'dark' ? 'black' : 'white'};
       padding: 4px 8px;
       border-radius: 4px;
       font-size: 0.8rem;
@@ -174,8 +174,8 @@ const ToggleButtonTooltip = styled.div`
   left: 30px;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
+  background: ${props => props.theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)'};
+  color: ${props => props.theme.mode === 'dark' ? 'black' : 'white'};
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 0.8rem;
@@ -193,9 +193,9 @@ const ToggleButton = styled.button<{ $isVisible: boolean }>`
   transform: translateY(-50%);
   width: 20px;
   height: 60px;
-  background: ${props => props.theme.colors.primary + '10'};
-  border: 1px solid ${props => props.theme.colors.primary + '30'};
-  border-left: ${props => props.$isVisible ? '1px solid ' + props.theme.colors.primary + '30' : 'none'};
+  background: rgba(var(--color-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+  border-left: ${props => props.$isVisible ? '1px solid rgba(var(--color-primary-rgb), 0.3)' : 'none'};
   border-radius: ${props => props.$isVisible ? '0 4px 4px 0' : '0 4px 4px 0'};
   display: flex;
   align-items: center;
@@ -203,12 +203,12 @@ const ToggleButton = styled.button<{ $isVisible: boolean }>`
   cursor: pointer;
   z-index: 11;
   transition: all 0.3s ease;
-  box-shadow: 1px 0 3px rgba(0,0,0,0.1);
-  color: ${props => props.theme.colors.primary};
+  box-shadow: 1px 0 3px ${props => props.theme.mode === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.1)'};
+  color: var(--color-primary);
   position: relative;
 
   &:hover {
-    background: ${props => props.theme.colors.primary + '20'};
+    background: rgba(var(--color-primary-rgb), 0.2);
     
     ${ToggleButtonTooltip} {
       opacity: 1;
@@ -414,8 +414,8 @@ export const EditorLayout = ({ chartId, onBack }: EditorLayoutProps) => {
                   <div style={{
                     padding: '10px',
                     margin: '0 0 16px 0',
-                    backgroundColor: '#fff9db',
-                    color: '#e67700',
+                    backgroundColor: 'var(--sampling-indicator-bg)',
+                    color: 'var(--sampling-indicator-text)',
                     borderRadius: '4px',
                     fontSize: '0.9rem'
                   }}>

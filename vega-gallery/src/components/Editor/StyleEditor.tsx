@@ -19,8 +19,8 @@ const Container = styled.div`
 `
 
 const Section = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 24px;
@@ -29,10 +29,10 @@ const Section = styled.div`
 const SectionTitle = styled.h3`
   margin: 0 0 16px 0;
   font-size: 1.25rem;
-  color: #2c3e50;
+  color: var(--color-text-primary);
   font-weight: 600;
   font-family: 'IBM Plex Sans', sans-serif;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--color-border);
   padding-bottom: 8px;
 `
 
@@ -44,13 +44,13 @@ const Label = styled.label`
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #495057;
+  color: var(--color-text-primary);
 `
 
 const Input = styled.input`
   width: 100%;
   padding: 8px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   margin-bottom: 8px;
 `
@@ -58,7 +58,7 @@ const Input = styled.input`
 const Select = styled.select`
   width: 100%;
   padding: 8px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
 `
 
@@ -66,7 +66,7 @@ const ColorInput = styled.input`
   padding: 4px;
   width: 60px;
   height: 30px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
 `
 
@@ -85,7 +85,7 @@ const StyleSection = styled(Section)`
     right: 16px;
     bottom: -1px;
     height: 1px;
-    background: ${props => props.theme.colors.border};
+    background: var(--color-border);
   }
 `;
 
@@ -96,25 +96,25 @@ const StyleHeader = styled.div`
   margin-bottom: 16px;
   
   svg {
-    color: ${props => props.theme.text.secondary};
+    color: var(--color-text-secondary);
     font-size: 20px;
   }
 `;
 
 const FontPreview = styled.div<{ $font: string }>`
   padding: 8px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-family: ${props => props.$font};
   margin-bottom: 8px;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
 `;
 
 const TypographySection = styled(StyleSection)`
   .preview-text {
     margin: 8px 0;
     padding: 12px;
-    border: 1px solid ${props => props.theme.colors.border};
+    border: 1px solid var(--color-border);
     border-radius: 6px;
   }
 `;
@@ -169,7 +169,7 @@ const getMarkSpecificControls = (markType: string, currentMark: any, updateMark:
                 });
               }}
             />
-            <div style={{ fontSize: '0.8rem', color: '#666' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
               {currentMark?.size || 50}%
             </div>
           </Control>
@@ -643,7 +643,7 @@ export const StyleEditor = ({ spec, onChange }: StyleEditorProps) => {
               });
             }}
           />
-          <div style={{ fontSize: '0.8rem', color: '#666' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
             {`${((spec.config?.textScale || 1) * 100).toFixed(0)}%`}
           </div>
           <ScalePreview $scale={spec.config?.textScale || 1}>

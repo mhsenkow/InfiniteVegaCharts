@@ -1,10 +1,10 @@
 import styled from 'styled-components';
 
 export const Card = styled.button`
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-border);
   transition: all 0.2s ease;
   cursor: pointer;
   display: flex;
@@ -17,7 +17,7 @@ export const Card = styled.button`
   }
 
   &:focus {
-    outline: 2px solid ${props => props.theme.colors.primary};
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
 `;
@@ -26,8 +26,8 @@ export const ChartPreview = styled.div`
   aspect-ratio: 4/3;
   min-height: 240px;
   padding: 16px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
   
   .vega-embed {
     width: 100%;
@@ -47,13 +47,13 @@ export const Content = styled.div`
 export const Title = styled.h3`
   margin: 0 0 8px 0;
   font-size: 1.1rem;
-  color: #2c3e50;
+  color: var(--color-text-primary);
   font-weight: 600;
 `;
 
 export const Description = styled.p`
   margin: 0 0 16px 0;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
   line-height: 1.4;
 `;
@@ -68,7 +68,7 @@ export const Badge = styled.span`
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: 500;
-  background: #f8f9fa;
-  color: #495057;
-  border: 1px solid #e9ecef;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
 `; 

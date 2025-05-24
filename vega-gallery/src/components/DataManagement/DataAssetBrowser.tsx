@@ -81,7 +81,7 @@ const StatsContainer = styled.div`
   display: flex;
   gap: 16px;
   margin-top: 8px;
-  color: ${props => props.theme.text?.secondary || '#6c757d'};
+  color: ${props => props.theme.colors.text?.secondary || '#6c757d'};
   font-size: 0.8rem;
 `;
 
@@ -91,7 +91,7 @@ const MetadataDetailTable = styled.table`
   
   th, td {
     padding: 8px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--color-border);
     text-align: left;
   }
   

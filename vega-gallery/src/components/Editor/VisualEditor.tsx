@@ -32,8 +32,8 @@ const Container = styled.div`
 `
 
 const Section = styled.div`
-  background: white;
-  border: 1px solid ${props => props.theme.colors.border};
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 4px;
   margin-bottom: 16px;
@@ -43,9 +43,9 @@ const Section = styled.div`
 const SectionTitle = styled.h3`
   margin: 0 0 16px 0;
   font-size: 1rem;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   font-weight: 600;
-  border-bottom: 1px solid ${props => props.theme.colors.border};
+  border-bottom: 1px solid var(--color-border);
   padding-bottom: 8px;
 `
 
@@ -60,26 +60,26 @@ const Label = styled.label`
   display: block;
   margin-bottom: 8px;
   font-size: 0.9rem;
-  color: #495057;
+  color: var(--color-text-primary);
   font-weight: 500;
 `
 
 const Select = styled.select`
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 0.9rem;
-  background: white;
-  color: #495057;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
   transition: border-color 0.2s;
 
   &:hover {
-    border-color: #adb5bd;
+    border-color: var(--color-text-tertiary);
   }
 
   &:focus {
-    border-color: #4dabf7;
+    border-color: var(--color-primary);
     outline: none;
     box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
   }
@@ -102,14 +102,14 @@ const TypeButtons = styled.div`
   gap: 4px;
   align-items: center;
   padding: 4px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 4px;
 `
 
 const TypeButton = styled(IconButton)<{ $active: boolean }>`
   && {
     background: ${props => props.$active ? props.theme.colors.primary + '20' : 'transparent'};
-    color: ${props => props.$active ? props.theme.colors.primary : props.theme.text.secondary};
+    color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.text.secondary};
     border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
     padding: 4px;
 
@@ -124,7 +124,7 @@ const EncodingTypeButton = styled(IconButton)<{ $active: boolean; $compatible?: 
     background: ${props => props.$active ? props.theme.colors.primary + '20' : 'transparent'};
     color: ${props => 
       props.$active ? props.theme.colors.primary : 
-      props.$compatible !== false ? props.theme.text.secondary :
+      props.$compatible !== false ? props.theme.colors.text.secondary :
       props.theme.colors.border};
     opacity: ${props => props.$compatible !== false ? 1 : 0.5};
     cursor: ${props => props.$compatible !== false ? 'pointer' : 'not-allowed'};
@@ -170,7 +170,7 @@ const DatasetCard = styled.button<{ $active: boolean; $disabled: boolean }>`
   padding: 12px;
   border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
   border-radius: 6px;
-  background: ${props => props.$active ? `${props.theme.colors.primary}10` : 'white'};
+  background: ${props => props.$active ? `var(--color-primary)10` : 'white'};
   text-align: left;
   cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
   opacity: ${props => props.$disabled ? 0.5 : 1};
@@ -187,24 +187,24 @@ const DatasetName = styled.div`
 
 const DatasetDescription = styled.div`
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `
 
 const RandomizeButton = styled.button`
   padding: 6px 12px;
-  background: #fff;
-  border: 1px solid #e9ecef;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  color: #495057;
+  color: var(--color-text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.9rem;
 
   &:hover {
-    background: #f8f9fa;
+    background: var(--color-background);
   }
 `
 
@@ -222,7 +222,7 @@ const EncodingHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--color-border);
   padding-bottom: 8px;
 `
 
@@ -245,7 +245,7 @@ const MarkTypeCard = styled.button<{ $active: boolean }>`
   position: relative;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: var(--color-primary);
     background: ${props => props.theme.colors.primary + '05'};
   }
 `
@@ -258,7 +258,7 @@ const MarkIcon = styled.div`
 const MarkName = styled.div`
   font-size: 0.9rem;
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--color-text-primary);
 `
 
 const MarkTooltip = styled.div`
@@ -267,7 +267,7 @@ const MarkTooltip = styled.div`
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.8);
-  color: white;
+  color: var(--color-surface);
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 0.8rem;
@@ -315,19 +315,19 @@ const MarkInfo = styled.div`
 
 const MarkDescription = styled.div`
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   margin-top: 4px;
 `
 
 const DatasetInfo = styled.div`
   margin-top: 16px;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 4px;
   display: flex;
   gap: 16px;
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `
 
 const EncodingRow = styled.div`
@@ -339,7 +339,7 @@ const EncodingRow = styled.div`
 
 const EncodingLabel = styled.div`
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const EncodingTypeControls = styled.div`
@@ -349,22 +349,22 @@ const EncodingTypeControls = styled.div`
 
 const EncodingHint = styled.div`
   font-size: 0.8rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
   margin-top: 4px;
 `;
 
 const EncodingPreview = styled.div`
   padding: 8px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 4px;
   margin-top: 8px;
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const Accordion = styled.div`
   margin-bottom: 12px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
 
@@ -376,7 +376,7 @@ const Accordion = styled.div`
 const AccordionHeader = styled.button<{ $isOpen: boolean }>`
   width: 100%;
   padding: 16px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border: none;
   display: flex;
   align-items: center;
@@ -384,11 +384,11 @@ const AccordionHeader = styled.button<{ $isOpen: boolean }>`
   cursor: pointer;
   font-size: 1.1rem;
   font-weight: 600;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   transition: background 0.2s;
 
   &:hover {
-    background: #f1f3f5;
+    background: var(--color-surfaceHover);
   }
 
   svg {
@@ -411,8 +411,8 @@ const AccordionContent = styled.div<{ $isOpen: boolean }>`
 
 const ActionButton = styled.button`
   padding: 8px 12px;
-  background: ${props => props.theme.colors.primary};
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -446,8 +446,8 @@ const RecommendationCard = styled.button<{ $active: boolean }>`
   transition: all 0.2s;
 
   &:hover {
-    border-color: #4dabf7;
-    background: #f8f9fa;
+    border-color: var(--color-primary);
+    background: var(--color-background);
   }
 `;
 
@@ -458,7 +458,7 @@ const RecommendationTitle = styled.div`
 
 const RecommendationReason = styled.div`
   font-size: 0.9rem;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   margin-bottom: 8px;
 `;
 
@@ -689,7 +689,7 @@ const DataTabsContainer = styled.div`
 const DataTab = styled.button<{ $active: boolean }>`
   padding: 8px 12px;
   background: ${props => props.$active ? 'white' : 'transparent'};
-  color: ${props => props.$active ? props.theme.colors.primary : props.theme.text.secondary};
+  color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.text.secondary};
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -704,10 +704,10 @@ const DataTab = styled.button<{ $active: boolean }>`
 `;
 
 const TabContent = styled.div`
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
   padding: 16px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-border);
   overflow-y: auto;
   flex: 1;
   display: flex;
@@ -750,7 +750,7 @@ const BINNING_OPTIONS = [
 const EncodingOptionSelect = styled.select`
   width: 100%;
   padding: 4px 8px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 0.8rem;
   margin-top: 4px;
@@ -1638,7 +1638,7 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
 
       {activeDataTab === 'chartType' && (
         <TabContent>
-          <p style={{ color: '#6c757d', marginBottom: '16px' }}>
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
             Choose the best visual mark for your data. Different marks work better for different types of data and comparisons.
           </p>
           <MarkTypeGrid>

@@ -17,10 +17,10 @@ const EmptyState = styled.div`
   align-items: center;
   justify-content: center;
   height: 300px;
-  background-color: #f8f9fa;
-  border: 2px dashed #ced4da;
+  background-color: var(--color-background);
+  border: 2px dashed var(--color-border);
   border-radius: 8px;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   text-align: center;
   padding: 32px;
 `;
@@ -31,16 +31,16 @@ const AddChartButton = styled.button`
   align-items: center;
   justify-content: center;
   height: 300px;
-  background-color: #f8f9fa;
-  border: 2px dashed #ced4da;
+  background-color: var(--color-background);
+  border: 2px dashed var(--color-border);
   border-radius: 8px;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   cursor: pointer;
   transition: all 0.2s;
   
   &:hover {
-    background-color: #e9ecef;
-    border-color: #adb5bd;
+    background-color: var(--color-border);
+    border-color: var(--color-text-tertiary);
   }
 `;
 

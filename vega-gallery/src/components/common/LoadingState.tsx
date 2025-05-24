@@ -11,13 +11,13 @@ const Container = styled.div`
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const Spinner = styled.div<{ $size?: 'small' | 'medium' | 'large' }>`
   width: ${props => props.$size === 'small' ? '20px' : props.$size === 'large' ? '60px' : '40px'};
   height: ${props => props.$size === 'small' ? '20px' : props.$size === 'large' ? '60px' : '40px'};
-  border: ${props => props.$size === 'small' ? '2px' : '3px'} solid ${props => props.theme.colors.primary};
+  border: ${props => props.$size === 'small' ? '2px' : '3px'} solid var(--color-primary);
   border-radius: 50%;
   border-top-color: transparent;
   animation: ${pulse} 1s linear infinite;

@@ -4,7 +4,7 @@ export const defaultChartStyle: ChartStyle = {
   colors: {
     primary: '#4C78A8',
     secondary: '#72B7B2',
-    background: 'white'
+    background: 'var(--color-surface)'
   },
   marks: {
     opacity: 0.6,

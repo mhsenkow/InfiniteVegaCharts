@@ -1,10 +1,10 @@
 import styled from 'styled-components';
 
 export const ChartContainer = styled.div`
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
 `;
 
 export const ChartControls = styled.div`
@@ -12,7 +12,7 @@ export const ChartControls = styled.div`
   gap: 12px;
   margin-bottom: 16px;
   padding: 8px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 6px;
   
   button {
@@ -20,9 +20,9 @@ export const ChartControls = styled.div`
     align-items: center;
     gap: 6px;
     padding: 8px 16px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-radius: 4px;
-    background: white;
+    background: var(--color-surface);
     color: #333;
     font-size: 14px;
     cursor: pointer;
@@ -43,7 +43,7 @@ export const ChartControls = styled.div`
 export const ChartWrapper = styled.div`
   width: 100%;
   height: 400px;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
 `; 

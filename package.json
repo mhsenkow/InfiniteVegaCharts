@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "glob": "^11.0.2"
+  }
+}

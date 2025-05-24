@@ -9,7 +9,7 @@ import { getDataset } from '../../utils/indexedDB';
 import { DataAsset } from '../../types/dataset';
 
 const ChartCard = styled.div`
-  background-color: white;
+  background-color: var(--color-surface);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -21,8 +21,8 @@ const ChartCard = styled.div`
 
 const ChartHeader = styled.div`
   padding: 12px 16px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background-color: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -31,7 +31,7 @@ const ChartHeader = styled.div`
 const ChartTitle = styled.div`
   font-weight: 500;
   font-size: 0.95rem;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
 `;
 
 const ChartContent = styled.div`
@@ -77,12 +77,12 @@ const ActionButton = styled.button`
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: #6c757d;
+  color: var(--color-text-secondary);
   border-radius: 4px;
 
   &:hover {
-    background-color: #f1f3f5;
-    color: #495057;
+    background-color: var(--color-surfaceHover);
+    color: var(--color-text-primary);
   }
 `;
 

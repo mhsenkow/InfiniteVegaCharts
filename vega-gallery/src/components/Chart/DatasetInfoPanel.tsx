@@ -26,7 +26,7 @@ const MetaStat = styled.div`
   align-items: center;
   gap: 4px;
   font-size: 0.8rem;
-  color: ${props => props.theme.text?.secondary || '#6c757d'};
+  color: ${props => props.theme.colors.text?.secondary || '#6c757d'};
 `;
 
 const MetaHeader = styled.div`

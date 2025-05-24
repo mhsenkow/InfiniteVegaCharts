@@ -8,25 +8,28 @@ import ViewColumnIcon from '@mui/icons-material/ViewColumn'
 import ViewComfortableIcon from '@mui/icons-material/ViewCompact'
 import { IconButton, Tooltip, ToggleButtonGroup, ToggleButton } from '@mui/material'
 import { useState, useEffect } from 'react'
+import { ThemeToggle } from './ThemeToggle'
 
 const HeaderContainer = styled.header`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid ${props => props.theme.colors.border};
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-appBar);
+  color: var(--color-appBarText);
 `
 
 const Logo = styled.div`
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: ${props => props.theme.text.primary};
+  font-size: var(--typography-fontSize-xl);
+  font-weight: var(--typography-fontWeight-semibold);
+  color: var(--color-text-primary);
 `
 
 const Navigation = styled.nav`
   display: flex;
-  gap: 16px;
+  gap: var(--spacing-md);
   align-items: center;
 `
 
@@ -113,6 +116,8 @@ export const Header = () => {
             <StorageIcon />
           </IconButton>
         </Tooltip>
+        
+        <ThemeToggle />
       </Navigation>
     </HeaderContainer>
   )

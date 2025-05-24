@@ -13,7 +13,7 @@ export const LoadingOverlay = styled.div`
 
 export const LoadingSpinner = styled.div`
   border: 3px solid #f3f3f3;
-  border-top: 3px solid ${props => props.theme.colors.primary};
+  border-top: 3px solid var(--color-primary);
   border-radius: 50%;
   width: 24px;
   height: 24px;

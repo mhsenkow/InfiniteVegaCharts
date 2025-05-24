@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { exportAllData, importData, calculateDatabaseSize } from '../../utils/exportImport';
 
 const Container = styled.div`
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   padding: 20px;
@@ -13,7 +13,7 @@ const Container = styled.div`
 const Title = styled.h3`
   margin-top: 0;
   margin-bottom: 16px;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
 `;
 
 const ButtonContainer = styled.div`
@@ -24,8 +24,8 @@ const ButtonContainer = styled.div`
 
 const Button = styled.button`
   padding: 8px 16px;
-  background-color: ${props => props.theme.colors.primary};
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -33,7 +33,7 @@ const Button = styled.button`
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: ${props => props.theme.colors.primaryDark};
+    background-color: var(--color-primaryDark);
   }
 
   &:disabled {
@@ -47,10 +47,10 @@ const FileInput = styled.input`
 `;
 
 const ImportButton = styled(Button)`
-  background-color: ${props => props.theme.colors.secondary};
+  background-color: var(--color-secondary);
   
   &:hover {
-    background-color: ${props => props.theme.colors.secondaryDark};
+    background-color: var(--color-secondaryDark);
   }
 `;
 
@@ -65,7 +65,7 @@ const MessageContainer = styled.div<{ $success?: boolean }>`
 
 const InfoText = styled.p`
   margin-top: 8px;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
   font-size: 14px;
 `;
 
@@ -74,7 +74,7 @@ const StatsContainer = styled.div`
   gap: 16px;
   margin-top: 16px;
   margin-bottom: 16px;
-  background-color: #f8f9fa;
+  background-color: var(--color-background);
   padding: 12px;
   border-radius: 4px;
 `;
@@ -88,12 +88,12 @@ const StatItem = styled.div`
 const StatValue = styled.div`
   font-size: 1.2rem;
   font-weight: 500;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
 `;
 
 const StatLabel = styled.div`
   font-size: 0.8rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 export const ExportImport: React.FC = () => {

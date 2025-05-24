@@ -18,26 +18,26 @@ declare global {
 }
 
 const Container = styled.div`
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
   padding: 24px;
   margin-bottom: 24px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
 `;
 
 const ImageUploadArea = styled.div<{ $isDragging: boolean }>`
-  border: 2px dashed ${props => props.$isDragging ? props.theme.colors.primary : props.theme.colors.border};
+  border: 2px dashed ${props => props.$isDragging ? 'var(--color-primary)' : 'var(--color-border)'};
   border-radius: 8px;
   padding: 32px;
   text-align: center;
   margin-bottom: 24px;
   transition: all 0.2s ease;
   cursor: pointer;
-  background: ${props => props.$isDragging ? `${props.theme.colors.primary}10` : '#f8f9fa'};
+  background: ${props => props.$isDragging ? `var(--color-primary)10` : '#f8f9fa'};
   
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    background: ${props => `${props.theme.colors.primary}10`};
+    border-color: var(--color-primary);
+    background: rgba(var(--color-primary-rgb), 0.1);
   }
 `;
 
@@ -51,7 +51,7 @@ const ImagePreview = styled.div`
     max-width: 100%;
     max-height: 300px;
     border-radius: 4px;
-    border: 1px solid ${props => props.theme.colors.border};
+    border: 1px solid var(--color-border);
   }
 `;
 
@@ -63,7 +63,7 @@ const ButtonContainer = styled.div`
 
 const ResultsContainer = styled.div`
   margin-top: 24px;
-  border-top: 1px solid ${props => props.theme.colors.border};
+  border-top: 1px solid var(--color-border);
   padding-top: 16px;
 `;
 
@@ -76,9 +76,9 @@ const ResultPreview = styled.pre`
   max-height: 300px;
   overflow: auto;
   padding: 16px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 4px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   font-size: 0.85rem;
   white-space: pre-wrap;
   word-break: break-word;
@@ -95,7 +95,7 @@ const ErrorMessage = styled.div`
 
 const StatusMessage = styled.div`
   margin-top: 8px;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
 `;
 
@@ -106,7 +106,7 @@ const CloudApiKeyInput = styled.div`
     width: 100%;
     padding: 8px;
     margin-top: 4px;
-    border: 1px solid ${props => props.theme.colors.border};
+    border: 1px solid var(--color-border);
     border-radius: 4px;
   }
 `;
@@ -504,7 +504,7 @@ export const ImageDataExtractor: React.FC<ImageDataExtractorProps> = ({ onDataEx
           style={{ display: 'none' }}
           onChange={handleFileSelect}
         />
-        <ImageIcon style={{ fontSize: 48, color: '#6c757d', marginBottom: 16 }} />
+        <ImageIcon style={{ fontSize: 48, color: 'var(--color-text-secondary)', marginBottom: 16 }} />
         <Typography variant="h6">Drop image or PDF here or click to browse</Typography>
         <Typography variant="body2" color="textSecondary">
           Supports JPEG, PNG, GIF and PDF files (max 10MB)
@@ -636,14 +636,14 @@ const LinearProgress = ({ variant, value }: { variant: string, value: number }) 
     <div style={{ 
       width: '100%', 
       height: `${trackHeight}px`,
-      backgroundColor: '#e9ecef',
+      backgroundColor: 'var(--color-border)',
       borderRadius: `${trackHeight}px`,
       overflow: 'hidden'
     }}>
       <div style={{
         height: '100%',
         width: `${value}%`,
-        backgroundColor: '#4dabf7',
+        backgroundColor: 'var(--color-primary)',
         borderRadius: `${trackHeight}px`,
         transition: 'width 0.4s ease'
       }} />

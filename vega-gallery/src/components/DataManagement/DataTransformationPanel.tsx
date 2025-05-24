@@ -5,15 +5,15 @@ import { storeDataset } from '../../utils/indexedDB';
 import { detectDataTypes } from '../../utils/dataUtils';
 
 const Panel = styled.div`
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   overflow: hidden;
 `;
 
 const Header = styled.div`
   padding: 16px;
-  border-bottom: 1px solid ${props => props.theme.colors.border};
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -21,7 +21,7 @@ const Header = styled.div`
 
 const Title = styled.h2`
   margin: 0;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
 `;
 
 const Content = styled.div`
@@ -34,12 +34,12 @@ const Section = styled.div`
 
 const SectionTitle = styled.h3`
   margin-bottom: 16px;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
 `;
 
 const TransformationCard = styled.div`
   padding: 16px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border-radius: 6px;
   margin-bottom: 16px;
 `;
@@ -53,7 +53,7 @@ const Grid = styled.div`
 const Select = styled.select`
   width: 100%;
   padding: 8px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   margin-bottom: 8px;
 `;
@@ -61,15 +61,15 @@ const Select = styled.select`
 const Input = styled.input`
   width: 100%;
   padding: 8px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   margin-bottom: 8px;
 `;
 
 const Button = styled.button`
   padding: 8px 16px;
-  background: ${props => props.theme.colors.primary};
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -89,12 +89,12 @@ const PreviewTable = styled.div`
     
     th, td {
       padding: 8px;
-      border: 1px solid ${props => props.theme.colors.border};
+      border: 1px solid var(--color-border);
       text-align: left;
     }
     
     th {
-      background: #f8f9fa;
+      background: var(--color-background);
     }
   }
 `;

@@ -8,7 +8,7 @@ const SelectorContainer = styled.div`
   margin-bottom: 24px;
   max-height: 400px;
   overflow-y: auto;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 16px;
   display: flex;
@@ -21,8 +21,8 @@ const DatasetCard = styled.button<{ $active: boolean }>`
   padding: 12px;
   margin-bottom: 8px;
   border: 1px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border};
-  border-radius: ${props => props.theme.borderRadius.md};
-  background: ${props => props.$active ? `${props.theme.colors.primary}10` : props.theme.colors.surface};
+  border-radius: var(--border-radius-md);
+  background: ${props => props.$active ? `var(--color-primary)10` : props.theme.colors.surface};
   text-align: left;
   cursor: pointer;
   
@@ -31,24 +31,24 @@ const DatasetCard = styled.button<{ $active: boolean }>`
   }
   
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: var(--color-primary);
   }
 `;
 
 const DatasetName = styled.div`
   font-weight: 500;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   margin-bottom: 4px;
 `;
 
 const DatasetDescription = styled.div`
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const DatasetMeta = styled.div`
   font-size: 0.8rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
   margin-top: 4px;
 `;
 

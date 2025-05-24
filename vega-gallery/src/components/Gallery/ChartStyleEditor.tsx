@@ -4,7 +4,7 @@ import { ChartStyle } from '../../types/chart';
 
 const StyleEditorContainer = styled.div`
   padding: 16px;
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
 `;
 
@@ -28,12 +28,12 @@ export const ChartStyleEditor: React.FC<ChartStyleEditorProps> = ({ style, onCha
   const defaultStyle: ChartStyle = {
     axis: {
       tickOpacity: 1,
-      baselineColor: '#000000',
+      baselineColor: window.getComputedStyle(document.documentElement).getPropertyValue('--color-text-primary').trim() || '#000000',
       baselineWidth: 1,
       baselineOpacity: 1,
     },
     view: {
-      backgroundColor: '#ffffff',
+      backgroundColor: window.getComputedStyle(document.documentElement).getPropertyValue('--color-surface').trim() || '#ffffff',
       backgroundOpacity: 1,
       padding: 5,
     }

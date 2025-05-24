@@ -3,16 +3,16 @@ import styled from 'styled-components';
 import { DatasetMetadata } from '../../types/dataset';
 
 const Panel = styled.div`
-  background: white;
+  background: var(--color-surface);
   border-radius: 8px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   overflow: hidden;
   margin-top: 8px;
 `;
 
 const Accordion = styled.div`
   margin-bottom: 12px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
 
@@ -24,7 +24,7 @@ const Accordion = styled.div`
 const AccordionHeader = styled.button<{ $isOpen: boolean }>`
   width: 100%;
   padding: 16px;
-  background: #f8f9fa;
+  background: var(--color-background);
   border: none;
   display: flex;
   align-items: center;
@@ -32,11 +32,11 @@ const AccordionHeader = styled.button<{ $isOpen: boolean }>`
   cursor: pointer;
   font-size: 1.1rem;
   font-weight: 600;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
   transition: background 0.2s;
 
   &:hover {
-    background: #f1f3f5;
+    background: var(--color-surfaceHover);
   }
 
   svg {
@@ -63,12 +63,12 @@ const Section = styled.div`
 const SectionTitle = styled.h3`
   font-size: 1.1rem;
   margin-bottom: 16px;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
 `;
 
 const MetricCard = styled.div`
   padding: 12px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   margin-bottom: 12px;
 `;
@@ -76,18 +76,18 @@ const MetricCard = styled.div`
 const MetricValue = styled.div`
   font-size: 1.2rem;
   font-weight: 600;
-  color: ${props => props.theme.text.primary};
+  color: var(--color-text-primary);
 `;
 
 const MetricLabel = styled.div`
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const ActionButton = styled.button`
   padding: 8px 12px;
-  background: ${props => props.theme.colors.primary};
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border: none;
   border-radius: 4px;
   cursor: pointer;

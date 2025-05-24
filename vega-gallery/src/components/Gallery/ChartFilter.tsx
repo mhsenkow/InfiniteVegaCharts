@@ -8,20 +8,20 @@ const Container = styled.div`
 
 const Label = styled.label`
   font-weight: 500;
-  color: ${props => props.theme.colors.text};
+  color: var(--color-text);
 `
 
 const Select = styled.select`
   padding: 6px 12px;
-  border: 1px solid ${props => props.theme.colors.border};
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: white;
+  background: var(--color-surface);
   font-size: 0.9rem;
-  color: ${props => props.theme.colors.text};
+  color: var(--color-text);
   cursor: pointer;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: var(--color-primary);
   }
 `
 

@@ -161,10 +161,10 @@ export const DatasetMetadataForm: React.FC<DatasetMetadataFormProps> = ({
               <Box sx={{ 
                 maxHeight: '200px', 
                 overflowY: 'auto', 
-                border: '1px solid #ddd', 
+                border: '1px solid var(--color-border)', 
                 borderRadius: '4px',
                 padding: '8px',
-                bgcolor: '#f5f5f5'
+                bgcolor: 'var(--color-surface-hover)'
               }}>
                 <pre style={{ margin: 0, fontSize: '0.8rem' }}>
                   {JSON.stringify(previewData, null, 2)}

@@ -10,7 +10,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 
 const FooterContainer = styled.div`
   margin-top: 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--color-border);
   padding-top: 12px;
 `;
 
@@ -20,18 +20,18 @@ const ToggleButton = styled.button<{ $isOpen: boolean }>`
   gap: 8px;
   padding: 8px 12px;
   width: 100%;
-  background: #f8f9fa;
-  border: 1px solid #eee;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
-  color: #495057;
+  color: var(--color-text-primary);
   transition: all 0.2s ease;
   margin-bottom: 4px;
 
   &:hover {
-    background: #f1f3f5;
-    border-color: #ddd;
+    background: var(--color-surfaceHover);
+    border-color: var(--color-border);
   }
 
   svg {
@@ -48,7 +48,7 @@ const TableContainer = styled.div<{ $isOpen: boolean }>`
   max-height: ${props => props.$isOpen ? '600px' : '0'};
   transition: max-height 0.3s ease;
   margin-top: 8px;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
 `;
 
@@ -66,19 +66,19 @@ const Table = styled.table`
   th, td {
     padding: 6px 12px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--color-border);
     white-space: nowrap;
   }
 
   th {
     position: sticky;
     top: 0;
-    background: #f8f9fa;
+    background: var(--color-background);
     z-index: 1;
   }
 
   tbody tr:hover {
-    background: #f8f9fa;
+    background: var(--color-background);
   }
 `;
 
@@ -87,12 +87,12 @@ const PaginationControls = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 12px;
-  background: #f8f9fa;
-  border-top: 1px solid #eee;
+  background: var(--color-background);
+  border-top: 1px solid var(--color-border);
 
   select {
     padding: 4px 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-radius: 4px;
   }
 
@@ -103,9 +103,9 @@ const PaginationControls = styled.div`
 
     button {
       padding: 4px 8px;
-      border: 1px solid #ddd;
+      border: 1px solid var(--color-border);
       border-radius: 4px;
-      background: white;
+      background: var(--color-surface);
       cursor: pointer;
 
       &:disabled {
@@ -114,7 +114,7 @@ const PaginationControls = styled.div`
       }
 
       &:hover:not(:disabled) {
-        background: #f1f3f5;
+        background: var(--color-surfaceHover);
       }
     }
   }
@@ -125,12 +125,12 @@ const TableControls = styled.div`
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #eee;
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
 
   input {
     padding: 4px 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-radius: 4px;
     width: 200px;
   }
@@ -151,13 +151,13 @@ const LoadingOverlay = styled.div`
 
 const EncodingSection = styled.div`
   padding: 16px;
-  border-top: 1px solid #eee;
-  background: #f8f9fa;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-background);
 
   h3 {
     margin: 0 0 16px 0;
     font-size: 1.1rem;
-    color: #2c3e50;
+    color: var(--color-text-primary);
   }
 `;
 
@@ -167,15 +167,15 @@ const SamplingIndicator = styled.div`
   gap: 4px;
   margin-left: 8px;
   padding: 4px 8px;
-  background: #fffce8;
-  border: 1px solid #ffe58f;
+  background: var(--color-samplingIndicator-background);
+  border: 1px solid var(--color-samplingIndicator-border);
   border-radius: 4px;
   font-size: 12px;
-  color: #755c0d;
+  color: var(--color-samplingIndicator-text);
   
   svg {
     font-size: 14px;
-    color: #f5a623;
+    color: var(--color-samplingIndicator-icon);
   }
 `;
 
@@ -188,22 +188,22 @@ const DataSummary = styled.div`
 
 const SummaryText = styled.div`
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
   display: flex;
   align-items: center;
 `;
 
 const ViewDataButton = styled.button`
   padding: 6px 12px;
-  background: white;
-  border: 1px solid ${props => props.theme.colors.border};
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: var(--color-primary);
   }
 `;
 
@@ -213,7 +213,7 @@ const SamplingContainer = styled.div`
   margin-bottom: 16px;
   align-items: center;
   font-size: 0.9rem;
-  color: ${props => props.theme.text.secondary};
+  color: var(--color-text-secondary);
 `;
 
 const SampleOption = styled.span<{ $active: boolean }>`
@@ -221,7 +221,7 @@ const SampleOption = styled.span<{ $active: boolean }>`
   border-radius: 4px;
   cursor: pointer;
   background: ${props => props.$active ? props.theme.colors.primary : 'transparent'};
-  color: ${props => props.$active ? 'white' : props.theme.text.secondary};
+  color: ${props => props.$active ? 'white' : props.theme.colors.text.secondary};
   font-size: 0.8rem;
   
   &:hover {

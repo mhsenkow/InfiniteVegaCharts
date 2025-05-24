@@ -23,7 +23,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return this.props.fallback || (
-        <div style={{ padding: '1rem', color: '#dc3545' }}>
+        <div style={{ padding: '1rem', color: 'var(--color-error)' }}>
           Something went wrong rendering this component.
         </div>
       );
