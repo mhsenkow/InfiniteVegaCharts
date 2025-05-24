@@ -3,10 +3,18 @@ import { Spec as VegaSpec } from 'vega'
 import vegaEmbed, { EmbedOptions, Config } from 'vega-embed'
 import { ChartStyle } from '../types/chart'
 import { ExtendedSpec, MarkType } from '../types/vega'
+import { enhanceChartSpec } from './chartEnhancements'
 
 interface RenderOptions {
   mode?: 'gallery' | 'editor';
   style?: Partial<ChartStyle>;
+  applySampling?: boolean; // New option to control sampling
+}
+
+// Interface for inline data typing
+interface InlineData {
+  values: any[];
+  [key: string]: any;
 }
 
 // Function to apply visual effects directly to SVG elements
@@ -161,6 +169,12 @@ const applyChartStyles = (spec: VegaLiteSpec | VegaSpec, style?: Partial<ChartSt
   };
 };
 
+// Helper function to extract chart type from spec
+const getChartType = (spec: any): MarkType => {
+  if (!spec || !spec.mark) return 'bar';
+  return typeof spec.mark === 'string' ? spec.mark : spec.mark.type;
+};
+
 /**
  * Renders a Vega-Lite specification into the provided element.
  * This function takes extra care to safely manipulate the DOM and avoid 
@@ -213,6 +227,23 @@ export const renderVegaLite = async (
       }
       
       return result.view; // Return the view directly for Vega specs
+    }
+    
+    // Apply sampling to large datasets by default (unless explicitly disabled)
+    if (options.applySampling !== false) {
+      // Check if the data is large enough to benefit from sampling
+      const chartType = getChartType(spec);
+      const inlineData = spec.data as InlineData;
+      
+      if (inlineData?.values && Array.isArray(inlineData.values) && inlineData.values.length > 1000) {
+        console.log(`Applying data sampling for ${chartType} chart with ${inlineData.values.length} points`);
+        
+        // Check if there's a specified sample size in the spec's config using type assertion
+        const specifiedSampleSize = (spec.config as any)?.sampleSize;
+        
+        // Pass the specified sample size if available
+        spec = enhanceChartSpec(spec, chartType, specifiedSampleSize);
+      }
     }
     
     // Process the spec for Vega-Lite
@@ -351,15 +382,24 @@ const processVegaLiteSpec = (spec: ExtendedSpec): any => {
     }
   }
 
+  // Preserve existing width and height if specified
+  const hasWidth = 'width' in spec && spec.width !== undefined;
+  const hasHeight = 'height' in spec && spec.height !== undefined;
+
   // Add schema, dimensions, etc.
   renderedSpec = {
     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
     ...renderedSpec,
-    width: 'container',
-    height: 'container',
+    // Only set width/height if not already specified
+    ...(!hasWidth && { width: 'container' }),
+    ...(!hasHeight && { height: 'container' }),
+    // Always ensure we have proper autosize configuration
     autosize: {
+      // Use type 'fit' to maintain aspect ratio and resize within container
+      // or 'fit-x'/'fit-y' for single-dimension fitting
       type: 'fit',
-      contains: 'padding'
+      contains: 'padding',
+      resize: true
     }
   };
 
@@ -372,6 +412,10 @@ const processVegaLiteSpec = (spec: ExtendedSpec): any => {
     const { size, ...restEncodings } = renderedSpec.encoding;
     renderedSpec.encoding = restEncodings;
   }
+  
+  console.log('Processed spec for rendering:', 
+    hasWidth ? 'Using width from spec' : 'Using container width',
+    hasHeight ? 'Using height from spec' : 'Using container height');
   
   return renderedSpec;
 };

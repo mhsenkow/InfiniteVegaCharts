@@ -389,10 +389,14 @@ export interface Snapshot {
   chartId: string;
   spec: any; // The Vega-Lite spec
   datasetId?: string;
+  datasetFingerprint?: string; // Reference to the original data fingerprint at time of creation
+  datasetMetadata?: Partial<DatasetMetadata>; // For frozen historical context
   createdAt: string;
+  updatedAt?: string;
   thumbnail?: string; // Base64 encoded image
   source?: string; // Source information for data lineage
   notes?: string; // Additional notes about data source
+  tags?: string[]; // Tags for categorization and filtering
 }
 
 // Snapshot operations

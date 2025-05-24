@@ -1,20 +1,23 @@
-import { Snapshot, Canvas, getAllSnapshots, getAllCanvases, storeSnapshot, storeCanvas, getAllDatasets } from './indexedDB';
+import { Snapshot, Canvas, getAllSnapshots, getAllCanvases, storeSnapshot, storeCanvas, getAllDatasets, getDataset, storeDataset } from './indexedDB';
+import { DatasetMetadata } from '../types/dataset';
 
 /**
- * Exports all user data (snapshots and canvases) as a JSON file
+ * Exports all user data (snapshots, canvases, and datasets) as a JSON file
  */
 export const exportAllData = async (): Promise<void> => {
   try {
     // Get all user data
     const snapshots = await getAllSnapshots();
     const canvases = await getAllCanvases();
+    const datasets = await getAllDatasets();
     
     // Create export object
     const exportData = {
       snapshots,
       canvases,
+      datasets,
       exportDate: new Date().toISOString(),
-      version: '1.0'
+      version: '1.1' // Upgraded version to indicate dataset support
     };
     
     // Convert to JSON and create download
@@ -34,25 +37,64 @@ export const exportAllData = async (): Promise<void> => {
 };
 
 /**
+ * Export a single chart spec with its dataset metadata
+ */
+export const exportChartWithMetadata = async (spec: any, datasetId?: string): Promise<string> => {
+  try {
+    // Include dataset metadata if available
+    let datasetMetadata: DatasetMetadata | null = null;
+    if (datasetId) {
+      datasetMetadata = await getDataset(datasetId);
+    }
+    
+    // Create export object
+    const exportData = {
+      spec,
+      dataset: datasetMetadata,
+      exportDate: new Date().toISOString(),
+      version: '1.1'
+    };
+    
+    // Convert to JSON and return
+    return JSON.stringify(exportData, null, 2);
+  } catch (error) {
+    console.error('Export chart failed:', error);
+    throw new Error(`Failed to export chart: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+/**
  * Validates the imported data structure
  */
 const validateImportData = (data: any): boolean => {
   // Basic validation
   if (!data || typeof data !== 'object') return false;
-  if (!Array.isArray(data.snapshots) || !Array.isArray(data.canvases)) return false;
   
-  // Check data version if needed
-  if (!data.version || data.version !== '1.0') {
-    console.warn('Import data version mismatch, but attempting import anyway');
+  // Version 1.1 with datasets
+  if (data.version === '1.1') {
+    if (!Array.isArray(data.snapshots) || !Array.isArray(data.canvases) || !Array.isArray(data.datasets)) {
+      return false;
+    }
+    return true;
   }
   
-  return true;
+  // Legacy version 1.0
+  if (data.version === '1.0') {
+    if (!Array.isArray(data.snapshots) || !Array.isArray(data.canvases)) {
+      return false;
+    }
+    return true;
+  }
+  
+  // Unknown version
+  console.warn('Import data version unknown, but attempting import anyway');
+  return Array.isArray(data.snapshots) || Array.isArray(data.canvases);
 };
 
 /**
  * Imports user data from a JSON file
  */
-export const importData = async (file: File): Promise<{ snapshots: number, canvases: number }> => {
+export const importData = async (file: File): Promise<{ snapshots: number, canvases: number, datasets: number }> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
@@ -76,9 +118,25 @@ export const importData = async (file: File): Promise<{ snapshots: number, canva
         const canvasPromises = data.canvases.map((canvas: Canvas) => storeCanvas(canvas));
         await Promise.all(canvasPromises);
         
+        // Import datasets if available
+        let datasetCount = 0;
+        if (Array.isArray(data.datasets)) {
+          const datasetPromises = data.datasets.map((dataset: DatasetMetadata) => {
+            return getDataset(dataset.id)
+              .then(existingDataset => {
+                if (!existingDataset) {
+                  return storeDataset(dataset);
+                }
+              });
+          });
+          await Promise.all(datasetPromises);
+          datasetCount = data.datasets.length;
+        }
+        
         resolve({
           snapshots: data.snapshots.length,
-          canvases: data.canvases.length
+          canvases: data.canvases.length,
+          datasets: datasetCount
         });
       } catch (error) {
         console.error('Import failed:', error);

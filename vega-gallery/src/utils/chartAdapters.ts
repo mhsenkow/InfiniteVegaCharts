@@ -381,9 +381,23 @@ const AVAILABLE_ENCODINGS_BY_MARK = {
   }
 } as const;
 
-export const generateRandomEncoding = (fields: [string, string][], chartType: MarkType): ChartEncoding => {
+// Add these constants for encoding transformations
+const AGGREGATION_METHODS = ['sum', 'mean', 'median', 'min', 'max', 'count'];
+const TIME_UNITS = ['year', 'quarter', 'month', 'week', 'day', 'hour', 'minute'];
+const BIN_OPTIONS = [true, { maxbins: 10 }, { maxbins: 20 }];
+
+export const generateRandomEncoding = (
+  chartType: string, 
+  availableFields: string[], 
+  dataTypes: Record<string, string>
+): ChartEncoding => {
   const encoding: ChartEncoding = {};
   const usedFields = new Set<string>();
+  
+  // Convert fields and types to format needed by helper functions
+  const fields: [string, string][] = availableFields
+    .filter(field => dataTypes[field])
+    .map(field => [field, dataTypes[field]]);
   
   const availableEncodings = AVAILABLE_ENCODINGS_BY_MARK[chartType as keyof typeof AVAILABLE_ENCODINGS_BY_MARK] || {
     required: [],
@@ -425,10 +439,28 @@ export const generateRandomEncoding = (fields: [string, string][], chartType: Ma
     const compatibleFields = getCompatibleFields(channel);
     if (compatibleFields.length > 0) {
       const field = compatibleFields[Math.floor(Math.random() * compatibleFields.length)];
-      encoding[channel] = {
+      const fieldType = field[1];
+      const encodingDef: EncodingField = {
         field: field[0],
-        type: getAppropriateType(channel, field[0], field[1])
+        type: getAppropriateType(channel, field[0], fieldType)
       };
+
+      // Add transformations (aggregation, time unit, binning) based on field type
+      if (fieldType === 'quantitative') {
+        // For quantitative fields, maybe add aggregation or binning
+        if (['y', 'theta', 'radius'].includes(channel) && Math.random() > 0.5) {
+          // For y-axis and pie chart angles, aggregation is often useful
+          encodingDef.aggregate = AGGREGATION_METHODS[Math.floor(Math.random() * AGGREGATION_METHODS.length)];
+        } else if (['x'].includes(channel) && Math.random() > 0.7) {
+          // For x-axis, binning can be useful
+          encodingDef.bin = BIN_OPTIONS[Math.floor(Math.random() * BIN_OPTIONS.length)];
+        }
+      } else if (fieldType === 'temporal' && Math.random() > 0.5) {
+        // For temporal fields, add time unit
+        encodingDef.timeUnit = TIME_UNITS[Math.floor(Math.random() * TIME_UNITS.length)];
+      }
+
+      encoding[channel] = encodingDef;
       usedFields.add(field[0]);
     }
   }
@@ -442,10 +474,22 @@ export const generateRandomEncoding = (fields: [string, string][], chartType: Ma
     const compatibleFields = getCompatibleFields(channel);
     if (compatibleFields.length > 0) {
       const field = compatibleFields[Math.floor(Math.random() * compatibleFields.length)];
-      encoding[channel] = {
+      const fieldType = field[1];
+      const encodingDef: EncodingField = {
         field: field[0],
-        type: getAppropriateType(channel, field[0], field[1])
+        type: getAppropriateType(channel, field[0], fieldType)
       };
+
+      // Add transformations based on field type and channel
+      if (fieldType === 'quantitative' && channel === 'color' && Math.random() > 0.5) {
+        // For color on quantitative, binning can be useful
+        encodingDef.bin = BIN_OPTIONS[Math.floor(Math.random() * BIN_OPTIONS.length)];
+      } else if (fieldType === 'temporal' && Math.random() > 0.6) {
+        // For temporal fields, add time unit
+        encodingDef.timeUnit = TIME_UNITS[Math.floor(Math.random() * TIME_UNITS.length)];
+      }
+
+      encoding[channel] = encodingDef;
       usedFields.add(field[0]);
     }
   }
@@ -458,14 +502,6 @@ export const generateRandomEncoding = (fields: [string, string][], chartType: Ma
       type: getAppropriateType('tooltip', field[0], field[1])
     }));
   }
-
-  // Fix time scale type assignment
-  const timeScales = {
-    linear: 'linear',
-    log: 'log',
-    sqrt: 'sqrt',
-    pow: 'pow'
-  } as const;
 
   return encoding;
 };

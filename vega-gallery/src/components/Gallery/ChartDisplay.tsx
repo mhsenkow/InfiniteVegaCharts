@@ -11,21 +11,47 @@ import {
 import { MarkType, ExtendedSpec, ChartEncoding } from '../../types/vega';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { enhanceChartSpec } from '../../utils/chartEnhancements';
+import { exportChartWithMetadata } from '../../utils/exportImport';
+import { DatasetMetadata } from '../../types/dataset';
+import { detectDataTypes } from '../../utils/dataUtils';
 
 interface ChartDisplayProps {
   chartType: MarkType;
   dataset: {
     values: Record<string, unknown>[];
+    id?: string;
     [key: string]: unknown;
   };
   encoding: ChartEncoding | null;
   style?: Partial<ChartStyle>;
 }
 
+/**
+ * Adapter function to transform partial dataset to format expected by chart utilities
+ */
+const createDatasetAdapter = (dataset: ChartDisplayProps['dataset']): DatasetMetadata => {
+  return {
+    id: dataset.id || 'temp-id',
+    name: 'display-dataset',
+    values: dataset.values,
+    createdAt: new Date().toISOString(),
+    dataTypes: detectDataTypes(dataset.values)
+  };
+};
+
+/**
+ * Prepare data for random encoding generation
+ */
+const prepareDataForRandomEncoding = (dataset: ChartDisplayProps['dataset']): [string, string][] => {
+  const dataTypes = detectDataTypes(dataset.values);
+  return Object.entries(dataTypes);
+};
+
 export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDisplayProps) => {
   const [spec, setSpec] = useState<ExtendedSpec | null>(null);
   const [encodings, setEncodings] = useState<ChartEncoding | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDataSampled, setIsDataSampled] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const renderTimeout = useRef<number | undefined>(undefined);
@@ -41,10 +67,32 @@ export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDispl
 
   const generateSpec = useCallback((encodingConfig: ChartEncoding | null) => {
     if (!dataset?.values?.length || !chartType) return;
+    
+    // Create a proper dataset adapter for the chart utilities
+    const datasetAdapter = createDatasetAdapter(dataset);
 
-    const finalEncodings = encodingConfig || determineChartEncodings(chartType, dataset);
-    setSpec(enhanceChartSpec({ ...baseSpec, encoding: finalEncodings }, chartType));
+    // Get the encodings using the adapter
+    const finalEncodings = encodingConfig || determineChartEncodings(chartType, datasetAdapter);
+    
+    // Create the spec with encodings
+    const fullSpec = { ...baseSpec, encoding: finalEncodings };
+    
+    // Apply chart enhancements including data sampling for large datasets
+    const enhancedSpec = enhanceChartSpec(fullSpec, chartType);
+    
+    // Check if data was sampled by comparing array lengths
+    const originalLength = dataset?.values?.length || 0;
+    const enhancedValues = (enhancedSpec.data as any)?.values;
+    const enhancedLength = Array.isArray(enhancedValues) ? enhancedValues.length : 0;
+    setIsDataSampled(originalLength > 0 && enhancedLength > 0 && originalLength !== enhancedLength);
+    
+    setSpec(enhancedSpec);
   }, [chartType, dataset, baseSpec]);
+
+  // Update spec when encodings change
+  useEffect(() => {
+    generateSpec(encodings || encoding);
+  }, [encodings, encoding, generateSpec]);
 
   // Debounced chart rendering
   const renderChart = useCallback(() => {
@@ -70,7 +118,12 @@ export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDispl
   }, [renderChart]);
 
   const handleRandomize = () => {
-    const newEncodings = generateRandomEncoding(chartType, dataset);
+    // Prepare data in the format expected by generateRandomEncoding
+    const fieldsWithTypes = prepareDataForRandomEncoding(dataset);
+    
+    // Call with the correct parameters: fields as [string, string][] and chartType as MarkType
+    // Use type assertion to handle different implementations in codebase
+    const newEncodings = generateRandomEncoding(fieldsWithTypes, chartType) as unknown as ChartEncoding;
     setEncodings(newEncodings);
   };
 
@@ -89,24 +142,39 @@ export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDispl
     setIsFullscreen(!isFullscreen);
   };
 
-  const downloadChart = (format: 'png' | 'svg' | 'json') => {
+  const downloadChart = async (format: 'png' | 'svg' | 'json') => {
     if (!chartRef.current) return;
     
     const vegaView = (chartRef.current as any).__vegaMetadata__?.view;
     if (!vegaView) return;
     
     if (format === 'json') {
-      const dataStr = JSON.stringify(spec, null, 2);
-      const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
-      const downloadLink = document.createElement('a');
-      downloadLink.setAttribute('href', dataUri);
-      downloadLink.setAttribute('download', `chart-${Date.now()}.json`);
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
+      try {
+        // Use the enhanced export that includes dataset metadata
+        const exportData = await exportChartWithMetadata(spec, dataset.id);
+        const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(exportData)}`;
+        const downloadLink = document.createElement('a');
+        downloadLink.setAttribute('href', dataUri);
+        downloadLink.setAttribute('download', `chart-${Date.now()}.json`);
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      } catch (error) {
+        console.error('Failed to export chart with metadata:', error);
+        // Fallback to basic export if enhanced export fails
+        const dataStr = JSON.stringify(spec, null, 2);
+        const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+        const downloadLink = document.createElement('a');
+        downloadLink.setAttribute('href', dataUri);
+        downloadLink.setAttribute('download', `chart-${Date.now()}.json`);
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      }
       return;
     }
     
+    // Image exports (png, svg)
     vegaView.toImageURL(format).then((url: string) => {
       const link = document.createElement('a');
       link.setAttribute('href', url);
@@ -145,6 +213,11 @@ export const ChartDisplay = ({ chartType, dataset, encoding, style }: ChartDispl
           </div>
           
           <div className="control-group">
+            {isDataSampled && (
+              <span className="data-info" title={`Showing a sample of the full dataset (${dataset?.values?.length} points) for performance`}>
+                <span role="img" aria-label="sampled">📊</span> Sampled Data
+              </span>
+            )}
             <button 
               onClick={toggleFullscreen}
               title={isFullscreen ? "Exit fullscreen" : "View fullscreen"}

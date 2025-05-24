@@ -4,11 +4,13 @@ import { renderVegaLite } from '../../utils/chartRenderer'
 import { ChartFooter } from './ChartFooter'
 import { TopLevelSpec } from 'vega-lite'
 import DownloadIcon from '@mui/icons-material/Download'
-import { ExtendedSpec } from '../../types/vega'
+import { ExtendedSpec, MarkType } from '../../types/vega'
 import WidthNormalIcon from '@mui/icons-material/CropLandscape'
 import WidthMediumIcon from '@mui/icons-material/Crop169'
 import WidthWideIcon from '@mui/icons-material/Crop75'
 import { Tooltip, ToggleButtonGroup, ToggleButton } from '@mui/material'
+import { enhanceChartSpec } from '../../utils/chartEnhancements'
+import InfoIcon from '@mui/icons-material/Info'
 
 const PreviewContainer = styled.div`
   display: flex;
@@ -124,6 +126,27 @@ const ResizeHandle = styled.div`
     opacity: 1;
     background: ${props => props.theme.colors.primary};
     transform: scaleY(1.5);
+  }
+`
+
+const SamplingIndicator = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #fffce8;
+  border: 1px solid #ffe58f;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #755c0d;
+  z-index: 100;
+  
+  svg {
+    font-size: 16px;
+    color: #f5a623;
   }
 `
 
@@ -251,102 +274,70 @@ const DownloadOption = styled.button`
   }
 `;
 
+// Helper function to determine chart type from spec
+const getChartType = (spec: any): MarkType => {
+  if (!spec || !spec.mark) return 'bar';
+  return typeof spec.mark === 'string' ? spec.mark : spec.mark.type;
+};
+
 interface PreviewProps {
   spec: string | TopLevelSpec | ExtendedSpec;
   renderKey?: number;
   onVegaViewUpdate?: (view: any) => void;
 }
 
+// Define InlineData interface
+interface InlineData {
+  values: any[];
+  [key: string]: any;
+}
+
 export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps) => {
+  const [chartHeight, setChartHeight] = useState(400)
+  const [chartWidth, setChartWidth] = useState<string>('medium')
+  const [isResizing, setIsResizing] = useState(false)
+  const isResizingRef = useRef(false)
+  const [initialY, setInitialY] = useState(0)
+  const [initialHeight, setInitialHeight] = useState(0)
   const chartRef = useRef<HTMLDivElement>(null)
   const chartContentRef = useRef<HTMLDivElement>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [sampleSize, setSampleSize] = useState(10)
-  const [chartHeight, setChartHeight] = useState(400)
-  const [isDragging, setIsDragging] = useState(false)
-  const dragRef = useRef({ startY: 0, startHeight: 0 })
-  const [selectedRatio, setSelectedRatio] = useState<AspectRatio>(ASPECT_RATIOS[0])
   const containerRef = useRef<HTMLDivElement>(null)
+  const currentViewRef = useRef<any>(null)
+  const [error, setError] = useState<string | null>(null)
   const [showDownloadMenu, setShowDownloadMenu] = useState(false)
   const [chartActive, setChartActive] = useState(false)
   const [vegaViewReady, setVegaViewReady] = useState(false)
-  const currentViewRef = useRef<any>(null)
-  const [chartWidth, setChartWidth] = useState(() => {
-    return localStorage.getItem('chartWidth') || 'medium';
-  });
+  const [selectedRatio, setSelectedRatio] = useState<AspectRatio>(ASPECT_RATIOS[0])
+  const [parsedSpec, setParsedSpec] = useState<any>(null)
+  const [isDataSampled, setIsDataSampled] = useState(false)
+  const [originalDataLength, setOriginalDataLength] = useState<number | null>(null)
+  const [sampledDataLength, setSampledDataLength] = useState<number | null>(null)
+  const [sampleSize, setSampleSize] = useState(1000);
 
-  // Fix the type issues in parsedSpec creation
-  const parsedSpec = useMemo(() => {
-    if (typeof spec === 'string') {
-      try {
-        return JSON.parse(spec);
-      } catch (e) {
-        console.error('Failed to parse spec:', e);
-        return { data: { values: [] } };
+  // Parse the input spec
+  useEffect(() => {
+    try {
+      const specObj = typeof spec === 'string' ? JSON.parse(spec) : spec;
+      setParsedSpec(specObj);
+      
+      // Check if data exists and store original length
+      if (specObj?.data?.values) {
+        setOriginalDataLength(specObj.data.values.length);
+      } else {
+        setOriginalDataLength(null);
       }
+    } catch (e) {
+      console.error('Error parsing spec:', e);
+      setError(e instanceof Error ? e.message : 'Failed to parse spec');
     }
-    return spec;
   }, [spec]);
 
-  // Clean up Vega view when component unmounts
-  useEffect(() => {
-    return () => {
-      // Clean up the view when component unmounts
-      if (currentViewRef.current) {
-        console.log('Cleaning up Vega view');
-        try {
-          currentViewRef.current.finalize();
-        } catch (e) {
-          console.error('Error finalizing Vega view:', e);
-        }
-        currentViewRef.current = null;
-      }
-    };
-  }, []);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true)
-    dragRef.current = {
-      startY: e.clientY,
-      startHeight: chartHeight
-    }
-    document.body.style.cursor = 'ns-resize'
-  }
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return
-
-      const delta = e.clientY - dragRef.current.startY
-      const newHeight = Math.max(200, Math.min(800, dragRef.current.startHeight + delta))
-      setChartHeight(newHeight)
-      
-      // Trigger immediate chart resize
-      requestAnimationFrame(() => {
-        renderChart()
-      })
-    }
-
-    const handleMouseUp = () => {
-      setIsDragging(false)
-      document.body.style.cursor = ''
-    }
-
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', handleMouseUp)
-    }
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [isDragging])
-
+  // Function to render the chart
   const renderChart = useCallback(async () => {
-    if (!chartRef.current || !chartContentRef.current) return;
-    
-    // If there's an existing view, clean it up first
+    if (!chartContentRef.current || !parsedSpec) {
+      return;
+    }
+
     if (currentViewRef.current) {
       try {
         console.log('Finalizing existing view before re-render');
@@ -361,21 +352,62 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
       // Clear previous content safely
       chartContentRef.current.innerHTML = '';
       
-      // Create a safely typed spec for rendering
-      const renderSpec = {
-        ...parsedSpec,
-        width: 'container',
-        height: 'container',
-        autosize: {
-          type: 'fit',
-          contains: 'padding'
-        },
-        // Add the renderKey as a config property to force new Vega-Lite view creation
-        config: {
-          ...(parsedSpec.config || {}),
-          _forceNewView: renderKey // This will cause Vega to create a new View
+      // Apply data sampling for large datasets
+      const chartType = getChartType(parsedSpec);
+      const originalData = parsedSpec.data?.values;
+      let renderSpec;
+      
+      // Check if the dataset is large and apply sampling
+      if (originalData && originalData.length > 1000) {
+        console.log(`Applying sampling to large dataset (${originalData.length} points) for ${chartType} chart`);
+        
+        // Apply enhancements including sampling
+        renderSpec = enhanceChartSpec({
+          ...parsedSpec,
+          width: 'container',
+          height: 'container',
+          autosize: {
+            type: 'fit',
+            contains: 'padding'
+          },
+          config: {
+            ...(parsedSpec.config || {}),
+            _forceNewView: renderKey, // This will cause Vega to create a new View
+            sampleSize: sampleSize // Add sampleSize to config
+          }
+        }, chartType, sampleSize);
+        
+        // Check if sampling was applied with proper type casting
+        const inlineData = renderSpec.data as InlineData;
+        const sampledData = inlineData?.values;
+        const wasSampled = sampledData && originalData && sampledData.length < originalData.length;
+        setIsDataSampled(wasSampled);
+        
+        if (wasSampled && sampledData) {
+          setSampledDataLength(sampledData.length);
+          console.log(`Dataset sampled from ${originalData.length} to ${sampledData.length} points`);
+        } else {
+          setSampledDataLength(null);
         }
-      };
+      } else {
+        // For smaller datasets, no sampling needed
+        renderSpec = {
+          ...parsedSpec,
+          width: 'container',
+          height: 'container',
+          autosize: {
+            type: 'fit',
+            contains: 'padding'
+          },
+          config: {
+            ...(parsedSpec.config || {}),
+            _forceNewView: renderKey,
+            sampleSize: sampleSize // Add sampleSize to config
+          }
+        };
+        setIsDataSampled(false);
+        setSampledDataLength(null);
+      }
       
       console.log('Rendering chart with spec:', renderSpec);
       
@@ -418,7 +450,7 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
         onVegaViewUpdate(null);
       }
     }
-  }, [parsedSpec, renderKey, onVegaViewUpdate]);
+  }, [parsedSpec, renderKey, onVegaViewUpdate, sampleSize]);
 
   // Ensure chart is rendered when component mounts or spec changes
   useEffect(() => {
@@ -570,6 +602,28 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
     img.src = url;
   }, []);
 
+  const handleDownloadJSON = useCallback(() => {
+    if (!parsedSpec) return;
+    
+    // Convert the spec to a string
+    const jsonString = JSON.stringify(parsedSpec, null, 2);
+    
+    // Create a blob and download link
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'chart-spec.json';
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [parsedSpec]);
+
   const handleChartClick = useCallback(() => {
     console.log('Chart clicked, force activating...');
     
@@ -598,96 +652,148 @@ export const Preview = ({ spec, renderKey = 0, onVegaViewUpdate }: PreviewProps)
     }
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsResizing(true);
+    isResizingRef.current = true;
+    setInitialY(e.clientY);
+    setInitialHeight(chartHeight);
+    document.body.style.cursor = 'ns-resize';
+    
+    // Define the handlers outside the mousedown event to ensure proper cleanup
+    function handleMouseMove(e: MouseEvent) {
+      if (!isResizingRef.current) return;
+      const delta = e.clientY - initialY;
+      const newHeight = Math.max(200, Math.min(1200, initialHeight + delta));
+      setChartHeight(newHeight);
+      
+      // Force chart to redraw when resizing is happening
+      if (chartRef.current) {
+        chartRef.current.style.height = `${newHeight}px`;
+      }
+    }
+    
+    function handleMouseUp() {
+      setIsResizing(false);
+      isResizingRef.current = false;
+      document.body.style.cursor = '';
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      
+      // Force chart to redraw after resize is complete
+      window.dispatchEvent(new Event('resize'));
+      
+      // Force vega chart to redraw specifically
+      renderChart();
+    }
+    
+    // Add event listeners to document to catch events outside the component
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    // Prevent default behavior to avoid text selection during resize
+    e.preventDefault();
+  };
+
   return (
     <PreviewContainer ref={containerRef}>
       <AspectRatioControl>
         <RatioContainer>
-          {ASPECT_RATIOS.map(ratio => (
-            <RatioButton
-              key={ratio.name}
-              $active={selectedRatio.name === ratio.name}
-              onClick={() => setSelectedRatio(ratio)}
-            >
-              {ratio.name}
-              <div className="description">{ratio.description}</div>
-            </RatioButton>
+          {ASPECT_RATIOS.map((ratio) => (
+            <Tooltip key={ratio.name} title={ratio.description} arrow>
+              <RatioButton
+                $active={selectedRatio.name === ratio.name}
+                onClick={() => setSelectedRatio(ratio)}
+              >
+                {ratio.name}
+              </RatioButton>
+            </Tooltip>
           ))}
         </RatioContainer>
         
         <WidthToggleContainer>
-          <Tooltip title="Chart Width">
-            <ToggleButtonGroup
-              value={chartWidth}
-              exclusive
-              onChange={handleChartWidthChange}
-              size="small"
-            >
-              <ToggleButton value="narrow" aria-label="narrow">
-                <WidthNormalIcon fontSize="small" />
-              </ToggleButton>
-              <ToggleButton value="medium" aria-label="medium">
-                <WidthMediumIcon fontSize="small" />
-              </ToggleButton>
-              <ToggleButton value="wide" aria-label="wide">
-                <WidthWideIcon fontSize="small" />
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Tooltip>
-          
-          <DownloadMenu>
-            <Tooltip title="Download Chart">
-              <IconOnlyButton onClick={() => setShowDownloadMenu(!showDownloadMenu)}>
-                <DownloadIcon />
-              </IconOnlyButton>
-            </Tooltip>
-            <DownloadOptions $show={showDownloadMenu}>
-              <DownloadOption onClick={() => {
-                handleDownloadSVG();
-                setShowDownloadMenu(false);
-              }}>
-                <DownloadIcon /> SVG Vector
-              </DownloadOption>
-              <DownloadOption onClick={() => {
-                handleDownloadPNG();
-                setShowDownloadMenu(false);
-              }}>
-                <DownloadIcon /> PNG Image
-              </DownloadOption>
-            </DownloadOptions>
-          </DownloadMenu>
+          <span>Width:</span>
+          <ToggleButtonGroup
+            value={chartWidth}
+            exclusive
+            onChange={handleChartWidthChange}
+            aria-label="chart width"
+            size="small"
+          >
+            <ToggleButton value="narrow" aria-label="narrow width">
+              <WidthNormalIcon />
+            </ToggleButton>
+            <ToggleButton value="medium" aria-label="medium width">
+              <WidthMediumIcon />
+            </ToggleButton>
+            <ToggleButton value="wide" aria-label="wide width">
+              <WidthWideIcon />
+            </ToggleButton>
+          </ToggleButtonGroup>
         </WidthToggleContainer>
+        
+        <IconOnlyButton
+          onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+          aria-label="Download chart"
+        >
+          <DownloadIcon />
+        </IconOnlyButton>
+        
+        <DownloadMenu>
+          <DownloadOptions $show={showDownloadMenu}>
+            <DownloadOption onClick={handleDownloadSVG}>SVG Image</DownloadOption>
+            <DownloadOption onClick={handleDownloadPNG}>PNG Image</DownloadOption>
+            <DownloadOption onClick={handleDownloadJSON}>JSON Spec</DownloadOption>
+          </DownloadOptions>
+        </DownloadMenu>
       </AspectRatioControl>
 
-      <div>
-        <ChartContainer
-          ref={chartRef}
-          $height={chartHeight}
-          $isActive={chartActive && vegaViewReady}
-          $width={chartWidth}
-          onClick={handleChartClick}
-        >
-          <div ref={chartContentRef} style={{ width: '100%', height: '100%' }} />
-        </ChartContainer>
-      </div>
-      
-      <ResizeHandle 
-        className="resize-handle" 
-        title="Resize chart" 
-        onMouseDown={handleMouseDown}
-      />
-      
-      <DataContainer>
-        {error ? (
-          <ErrorMessage>{error}</ErrorMessage>
-        ) : (
-          <ChartFooter
-            data={parsedSpec?.data?.values}
-            spec={parsedSpec}
-            sampleSize={sampleSize}
-            onSampleSizeChange={setSampleSize}
-          />
+      <ChartContainer
+        ref={chartRef}
+        $height={chartHeight}
+        $isActive={chartActive}
+        $width={chartWidth}
+        onClick={() => !chartActive && setChartActive(true)}
+      >
+        {isDataSampled && (
+          <SamplingIndicator title={`Showing a sample of ${sampledDataLength} out of ${originalDataLength} data points for better performance`}>
+            <InfoIcon fontSize="small" />
+            Showing sampled data for performance
+          </SamplingIndicator>
         )}
+        
+        <div ref={chartContentRef} style={{ width: '100%', height: '100%' }} />
+      </ChartContainer>
+
+      <ResizeHandle
+        onMouseDown={handleMouseDown}
+        title="Drag to resize chart"
+      />
+
+      <DataContainer>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+        <ChartFooter
+          data={parsedSpec?.data?.values}
+          spec={parsedSpec}
+          sampleSize={sampleSize}
+          onSampleSizeChange={(newSize) => {
+            console.log(`Preview: Changing sample size from ${sampleSize} to ${newSize}`);
+            setSampleSize(newSize);
+            
+            // Ensure we're not in resize mode when changing sample size
+            if (isResizingRef.current) {
+              isResizingRef.current = false;
+              setIsResizing(false);
+              document.body.style.cursor = '';
+            }
+            
+            // Use setTimeout to ensure state is updated before re-rendering
+            setTimeout(() => {
+              // Force re-render with the new sample size
+              renderChart();
+            }, 0);
+          }}
+        />
       </DataContainer>
     </PreviewContainer>
-  );
-};
+  )
+}

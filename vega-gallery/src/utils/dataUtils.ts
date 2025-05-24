@@ -326,4 +326,198 @@ export const inferChartType = (dataset: DatasetValues): MarkType => {
   
   // Default to point (scatter plot)
   return 'point';
+};
+
+/**
+ * Generates a SHA-256 hash of the dataset content
+ * @param data The dataset to fingerprint
+ * @returns SHA-256 hash as a string
+ */
+export const generateDataFingerprint = async (data: any[]): Promise<string> => {
+  if (!data || data.length === 0) return '';
+  
+  try {
+    // Convert data to a stable string representation
+    const stableString = JSON.stringify(data, Object.keys(data[0]).sort());
+    
+    // Use browser's crypto API to generate a hash
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(stableString);
+    
+    // Use browser's crypto API
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    
+    // Convert hash to hex string
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  } catch (error) {
+    console.error('Failed to generate data fingerprint:', error);
+    return `error-${Date.now()}`;
+  }
+};
+
+/**
+ * Creates preview rows from dataset
+ * @param data Full dataset
+ * @param count Number of preview rows to generate
+ * @returns Array of preview rows
+ */
+export const generatePreviewRows = (data: any[], count: number = 10): any[] => {
+  if (!data || data.length === 0) return [];
+  return data.slice(0, Math.min(count, data.length));
+};
+
+/**
+ * Enhances a dataset with complete metadata
+ * @param dataset Partial dataset metadata
+ * @param data Dataset values
+ * @returns Complete dataset metadata
+ */
+export const enhanceDatasetMetadata = async (
+  dataset: Partial<DatasetMetadata>, 
+  data: any[]
+): Promise<DatasetMetadata> => {
+  const now = new Date().toISOString();
+  
+  // Generate field types if not provided
+  const fieldTypes = dataset.dataTypes || detectDataTypes(data);
+  
+  // Generate compatible charts
+  const compatibleCharts = dataset.compatibleCharts || 
+    determineCompatibleCharts({ 
+      id: dataset.id || '', 
+      name: dataset.name || '', 
+      createdAt: dataset.createdAt || now,
+      dataTypes: fieldTypes, 
+      values: data 
+    });
+  
+  // Generate fingerprint
+  const fingerprint = await generateDataFingerprint(data);
+  
+  return {
+    id: dataset.id || `dataset-${Date.now()}`,
+    name: dataset.name || 'Unnamed Dataset',
+    description: dataset.description || '',
+    createdAt: dataset.createdAt || now,
+    updatedAt: dataset.updatedAt || now,
+    values: data,
+    columns: data.length > 0 ? Object.keys(data[0]) : [],
+    rowCount: data.length,
+    columnCount: data.length > 0 ? Object.keys(data[0]).length : 0,
+    dataTypes: fieldTypes,
+    fieldTypes: Object.entries(fieldTypes).reduce((acc, [key, type]) => {
+      let jsType = 'string';
+      if (type === 'quantitative') jsType = 'number';
+      if (type === 'temporal') jsType = 'date';
+      if (type === 'boolean') jsType = 'boolean';
+      acc[key] = jsType as any;
+      return acc;
+    }, {} as Record<string, any>),
+    compatibleCharts,
+    fingerprint,
+    previewRows: generatePreviewRows(data, 10),
+    source: dataset.source || 'manual upload',
+    origin: dataset.origin || 'manual upload',
+    tags: dataset.tags || [],
+    linkedChartIds: dataset.linkedChartIds || [],
+    ...dataset
+  };
+};
+
+/**
+ * Creates a sample of a large dataset for performance optimization
+ * @param data The full dataset
+ * @param sampleSize Maximum number of rows to include in the sample
+ * @returns A representative sample of the data
+ */
+export const createDataSample = (data: any[], sampleSize: number = 1000): any[] => {
+  if (!data || data.length === 0) return [];
+  
+  // If data is smaller than sample size, return the whole dataset
+  if (data.length <= sampleSize) return data;
+  
+  // For very large datasets, do stratified sampling
+  if (data.length > 10000) {
+    return stratifiedSampling(data, sampleSize);
+  }
+  
+  // For medium datasets, take evenly spaced samples
+  const interval = Math.floor(data.length / sampleSize);
+  return data.filter((_, index) => index % interval === 0).slice(0, sampleSize);
+};
+
+/**
+ * Performs stratified sampling on a dataset to maintain distribution characteristics
+ * @param data The full dataset
+ * @param sampleSize Maximum number of rows
+ * @returns A stratified sample
+ */
+export const stratifiedSampling = (data: any[], sampleSize: number): any[] => {
+  // Take some from beginning, middle, and end to capture trends
+  const firstPart = Math.floor(sampleSize * 0.4);
+  const middlePart = Math.floor(sampleSize * 0.2);
+  const lastPart = sampleSize - firstPart - middlePart;
+  
+  const beginning = data.slice(0, firstPart);
+  
+  // Get middle section
+  const middleStart = Math.floor(data.length / 2) - Math.floor(middlePart / 2);
+  const middle = data.slice(middleStart, middleStart + middlePart);
+  
+  // Get end section
+  const end = data.slice(data.length - lastPart);
+  
+  return [...beginning, ...middle, ...end];
+};
+
+/**
+ * Creates a paginated view of a dataset
+ * @param data The full dataset
+ * @param page Current page number (1-based)
+ * @param pageSize Number of items per page
+ * @returns The current page of data
+ */
+export const paginateData = (data: any[], page: number = 1, pageSize: number = 50): any[] => {
+  if (!data || data.length === 0) return [];
+  
+  const startIndex = (page - 1) * pageSize;
+  return data.slice(startIndex, startIndex + pageSize);
+};
+
+/**
+ * Processes large datasets in chunks to avoid UI freezing
+ * @param data The dataset to process
+ * @param processFn The function to apply to each chunk
+ * @param chunkSize Number of items to process in each chunk
+ * @param onProgress Optional callback for progress updates
+ * @returns Promise that resolves when processing is complete
+ */
+export const processInChunks = async (
+  data: any[], 
+  processFn: (chunk: any[]) => any[],
+  chunkSize: number = 1000,
+  onProgress?: (progress: number) => void
+): Promise<any[]> => {
+  if (!data || data.length === 0) return [];
+  
+  const result: any[] = [];
+  const totalChunks = Math.ceil(data.length / chunkSize);
+  
+  for (let i = 0; i < totalChunks; i++) {
+    const chunk = data.slice(i * chunkSize, (i + 1) * chunkSize);
+    
+    // Process each chunk with a small delay to allow UI updates
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    const processedChunk = processFn(chunk);
+    result.push(...processedChunk);
+    
+    if (onProgress) {
+      onProgress((i + 1) / totalChunks);
+    }
+  }
+  
+  return result;
 }; 

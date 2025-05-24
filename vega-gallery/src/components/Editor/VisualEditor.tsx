@@ -717,6 +717,45 @@ const TabContent = styled.div`
 // Add this type for data subsection tabs
 type DataTabSection = 'dataset' | 'filter' | 'chartType' | 'encoding';
 
+// Add these new constants for encoding options
+const AGGREGATION_OPTIONS = [
+  { value: '', label: 'No Aggregation' },
+  { value: 'sum', label: 'Sum' },
+  { value: 'mean', label: 'Mean/Average' },
+  { value: 'median', label: 'Median' },
+  { value: 'min', label: 'Minimum' },
+  { value: 'max', label: 'Maximum' },
+  { value: 'count', label: 'Count' }
+];
+
+const TIME_UNIT_OPTIONS = [
+  { value: '', label: 'No Time Unit' },
+  { value: 'year', label: 'Year' },
+  { value: 'quarter', label: 'Quarter' },
+  { value: 'month', label: 'Month' },
+  { value: 'week', label: 'Week' },
+  { value: 'day', label: 'Day' },
+  { value: 'hour', label: 'Hour' },
+  { value: 'minute', label: 'Minute' }
+];
+
+const BINNING_OPTIONS = [
+  { value: '', label: 'No Binning' },
+  { value: 'bin', label: 'Auto Bin' },
+  { value: 'bin-5', label: '5 Bins' },
+  { value: 'bin-10', label: '10 Bins' },
+  { value: 'bin-20', label: '20 Bins' }
+];
+
+const EncodingOptionSelect = styled.select`
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin-top: 4px;
+`;
+
 export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProps) => {
   // Add state for dataset cache
   const [datasetCache, setDatasetCache] = useState<Record<string, DatasetMetadata>>({});
@@ -975,50 +1014,34 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
   };
 
   const handleEncodingChange = (channel: string, update: EncodingUpdate) => {
-    if (!encodings) return;
-
-    // Create updated encoding configuration
-    let updatedEncoding = {
-      ...(encodings[channel] || {}),
+    const currentEncoding = encodings[channel] || {};
+    const newEncoding = {
+      ...currentEncoding,
       ...update
     };
 
-    // Special case for temporal data
-    if (update.type === 'temporal' && !update.timeUnit && updatedEncoding.field) {
-      const values = spec.data?.values || [];
-      const fieldValues = values.map(d => d[updatedEncoding.field]);
-      const hasTime = fieldValues.some(v => {
-        if (!v) return false;
-        const date = new Date(v);
-        return !isNaN(date.getTime()) && 
-          (v.includes(':') || v.includes('T'));
-      });
-      
-      if (hasTime) {
-        updatedEncoding.timeUnit = 'yearmonthdate';
+    // Remove properties with empty string values
+    Object.keys(newEncoding).forEach(key => {
+      if (newEncoding[key] === '') {
+        delete newEncoding[key];
       }
+    });
+
+    // Handle bin specially since it can be boolean or object
+    if (update.bin === '') {
+      delete newEncoding.bin;
+    } else if (typeof update.bin === 'string' && update.bin.startsWith('bin-')) {
+      const binCount = parseInt(update.bin.split('-')[1]);
+      newEncoding.bin = { maxbins: binCount };
     }
 
-    // Create a copy of current encodings
-    const newEncodings = { ...encodings };
-    
-    // If field is empty, remove the encoding
-    if (update.field === '') {
-      delete newEncodings[channel];
-    } else {
-      newEncodings[channel] = updatedEncoding;
-    }
-    
-    // Update state
-    setEncodings(newEncodings);
-    
-    // Create the updated specification and trigger onChange
-    const newSpec = {
-      ...spec,
-      encoding: newEncodings
+    const updatedEncodings = {
+      ...encodings,
+      [channel]: newEncoding
     };
-    
-    onChange(newSpec);
+
+    setEncodings(updatedEncodings);
+    onChange({ ...spec, encoding: updatedEncodings });
   };
 
   const fields = useMemo(() => {
@@ -1094,10 +1117,28 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
         const randomField = compatibleFields[
           Math.floor(Math.random() * compatibleFields.length)
         ];
-        newEncodings[channel] = {
+        
+        const fieldType = fieldTypes[randomField];
+        const encoding = {
           field: randomField,
-          type: fieldTypes[randomField]
+          type: fieldType
         };
+        
+        // Add suggested encoding options
+        const suggestion = suggestEncodingOption(randomField, channel, fieldType);
+        if (suggestion) {
+          if (fieldType === 'quantitative') {
+            if (suggestion === 'bin') {
+              encoding.bin = true;
+            } else {
+              encoding.aggregate = suggestion;
+            }
+          } else if (fieldType === 'temporal') {
+            encoding.timeUnit = suggestion;
+          }
+        }
+        
+        newEncodings[channel] = encoding;
       }
     });
     
@@ -1454,6 +1495,55 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
   // Add this state for data tabs
   const [activeDataTab, setActiveDataTab] = useState<DataTabSection>('dataset');
 
+  // Add helper to get appropriate encoding options based on field type
+  const getEncodingOptions = (channel: string, fieldType: string) => {
+    if (fieldType === 'quantitative') {
+      return AGGREGATION_OPTIONS.concat(BINNING_OPTIONS);
+    } else if (fieldType === 'temporal') {
+      return TIME_UNIT_OPTIONS;
+    }
+    return [];
+  };
+
+  // Add helper to detect if a field would benefit from aggregation
+  const suggestEncodingOption = (field: string, channel: string, fieldType: string) => {
+    if (!field || !spec.data?.values) return '';
+    
+    // Get data for field
+    const values = spec.data.values.map(d => d[field]).filter(v => v !== undefined && v !== null);
+    
+    if (fieldType === 'quantitative') {
+      const uniqueCount = new Set(values).size;
+      const totalCount = values.length;
+      
+      // If there are many unique values and channel is y, suggest sum or mean
+      if (uniqueCount > 20 && channel === 'y') {
+        return 'mean';
+      }
+      
+      // If there are many values but few uniques, suggest binning
+      if (uniqueCount < totalCount * 0.1 && uniqueCount > 10) {
+        return 'bin';
+      }
+    } else if (fieldType === 'temporal') {
+      // For date fields, suggest appropriate time unit
+      const dates = values.map(v => new Date(v));
+      const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+      const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+      
+      const daysDiff = (maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24);
+      
+      if (daysDiff > 365 * 2) return 'year';
+      if (daysDiff > 90) return 'month';
+      if (daysDiff > 30) return 'week';
+      if (daysDiff > 2) return 'day';
+      
+      return 'hour';
+    }
+    
+    return '';
+  };
+
   if (!spec) {
     return <div>Invalid specification</div>
   }
@@ -1684,37 +1774,98 @@ export const VisualEditor = ({ spec, onChange, onChartRender }: VisualEditorProp
                     </Select>
                     
                     {encodings[channel]?.field && (
-                      <TypeButtons>
-                        {[
-                          { type: 'quantitative', icon: <NumbersIcon />, label: 'Number' },
-                          { type: 'temporal', icon: <TimelineIcon />, label: 'Time' },
-                          { type: 'nominal', icon: <CategoryIcon />, label: 'Category' },
-                          { type: 'ordinal', icon: <BarChartIcon />, label: 'Ordered' }
-                        ].map(({ type, icon, label }) => {
-                          const field = encodings[channel]?.field;
-                          const compatibleTypes = field ? 
-                            getCompatibleTypes(field, spec.data?.values || []) : 
-                            [];
-                          
-                          const isCompatible = compatibleTypes.includes(type);
-                          
-                          return (
-                            <Tooltip key={type} title={label}>
-                              <span>
-                                <EncodingTypeButton 
-                                  $active={encodings[channel]?.type === type}
-                                  $compatible={isCompatible}
-                                  onClick={() => isCompatible && handleEncodingChange(channel, { type })}
-                                  size="small"
-                                  disabled={!isCompatible}
-                                >
-                                  {icon}
-                                </EncodingTypeButton>
-                              </span>
-                            </Tooltip>
-                          );
-                        })}
-                      </TypeButtons>
+                      <>
+                        <TypeButtons>
+                          {[
+                            { type: 'quantitative', icon: <NumbersIcon />, label: 'Number' },
+                            { type: 'temporal', icon: <TimelineIcon />, label: 'Time' },
+                            { type: 'nominal', icon: <CategoryIcon />, label: 'Category' },
+                            { type: 'ordinal', icon: <BarChartIcon />, label: 'Ordered' }
+                          ].map(({ type, icon, label }) => {
+                            const field = encodings[channel]?.field;
+                            const compatibleTypes = field ? 
+                              getCompatibleTypes(field, spec.data?.values || []) : 
+                              [];
+                            
+                            const isCompatible = compatibleTypes.includes(type);
+                            
+                            return (
+                              <Tooltip key={type} title={label}>
+                                <span>
+                                  <EncodingTypeButton 
+                                    $active={encodings[channel]?.type === type}
+                                    $compatible={isCompatible}
+                                    onClick={() => isCompatible && handleEncodingChange(channel, { type })}
+                                    size="small"
+                                    disabled={!isCompatible}
+                                  >
+                                    {icon}
+                                  </EncodingTypeButton>
+                                </span>
+                              </Tooltip>
+                            );
+                          })}
+                        </TypeButtons>
+                        
+                        {/* Add encoding options dropdown */}
+                        {encodings[channel]?.type && (
+                          <EncodingOptionSelect
+                            value={
+                              encodings[channel]?.aggregate || 
+                              encodings[channel]?.timeUnit || 
+                              (encodings[channel]?.bin ? 
+                                (typeof encodings[channel].bin === 'object' && 'maxbins' in encodings[channel].bin) ? 
+                                  `bin-${encodings[channel].bin.maxbins}` : 'bin' 
+                                : '')
+                            }
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const update: EncodingUpdate = {};
+                              
+                              // Clear all transformation properties first
+                              update.aggregate = '';
+                              update.timeUnit = '';
+                              update.bin = '';
+                              
+                              // Set the selected transformation
+                              if (AGGREGATION_OPTIONS.some(opt => opt.value === value)) {
+                                update.aggregate = value;
+                              } else if (TIME_UNIT_OPTIONS.some(opt => opt.value === value)) {
+                                update.timeUnit = value;
+                              } else if (value === 'bin') {
+                                update.bin = true;
+                              } else if (value.startsWith('bin-')) {
+                                update.bin = value;
+                              }
+                              
+                              handleEncodingChange(channel, update);
+                            }}
+                          >
+                            <option value="">Select option</option>
+                            {encodings[channel].type === 'quantitative' && (
+                              <>
+                                <optgroup label="Aggregation">
+                                  {AGGREGATION_OPTIONS.filter(opt => opt.value).map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                  ))}
+                                </optgroup>
+                                <optgroup label="Binning">
+                                  {BINNING_OPTIONS.filter(opt => opt.value).map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                  ))}
+                                </optgroup>
+                              </>
+                            )}
+                            {encodings[channel].type === 'temporal' && (
+                              <optgroup label="Time Unit">
+                                {TIME_UNIT_OPTIONS.filter(opt => opt.value).map(opt => (
+                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                          </EncodingOptionSelect>
+                        )}
+                      </>
                     )}
                   </EncodingControl>
                 </EncodingGrid>
@@ -1797,7 +1948,7 @@ const isCompatibleEncoding = (channel: string, markType: MarkType): boolean => {
   return compatibleChannels[markType]?.includes(channel) ?? false;
 };
 
-// Add these chart templates after the interfaces
+// Add more detailed templates with encoding options
 const CHART_TEMPLATES: ChartTemplate[] = [
   {
     name: 'Time Series',
@@ -1805,7 +1956,7 @@ const CHART_TEMPLATES: ChartTemplate[] = [
     markType: 'line',
     description: 'Visualize trends over time',
     encodings: {
-      x: { type: 'temporal' },
+      x: { type: 'temporal', timeUnit: 'yearmonth' },
       y: { type: 'quantitative' },
       color: { type: 'nominal' }
     },
@@ -1821,7 +1972,7 @@ const CHART_TEMPLATES: ChartTemplate[] = [
     description: 'Compare values across categories',
     encodings: {
       x: { type: 'nominal' },
-      y: { type: 'quantitative' },
+      y: { type: 'quantitative', aggregate: 'sum' },
       color: { type: 'nominal' }
     }
   },
@@ -1838,33 +1989,55 @@ const CHART_TEMPLATES: ChartTemplate[] = [
     }
   },
   {
+    name: 'Binned Heatmap',
+    icon: '🟦',
+    markType: 'rect',
+    description: 'Show density of points with binning',
+    encodings: {
+      x: { type: 'quantitative', bin: true },
+      y: { type: 'quantitative', bin: true },
+      color: { type: 'quantitative', aggregate: 'count' }
+    }
+  },
+  {
     name: 'Pie Chart',
     icon: '🥧',
     markType: 'arc',
-    description: 'Show proportions of the whole',
+    description: 'Show composition of a whole',
     encodings: {
-      theta: { type: 'quantitative' },
+      theta: { type: 'quantitative', aggregate: 'sum' },
       color: { type: 'nominal' }
     }
   },
   {
-    name: 'Heatmap',
-    icon: '🟥',
-    markType: 'rect',
-    description: 'Visualize data density in two dimensions',
+    name: 'Box Plot',
+    icon: '📦',
+    markType: 'boxplot',
+    description: 'Show distribution statistics',
     encodings: {
       x: { type: 'nominal' },
-      y: { type: 'nominal' },
-      color: { type: 'quantitative' }
+      y: { type: 'quantitative' },
+      color: { type: 'nominal' }
     }
   },
   {
-    name: 'Distribution',
-    icon: '🔔',
-    markType: 'bar',
-    description: 'Visualize value distributions (histogram)',
+    name: 'Monthly Trends',
+    icon: '📅',
+    markType: 'line',
+    description: 'Visualize monthly patterns',
     encodings: {
-      x: { type: 'quantitative', bin: true },
+      x: { type: 'temporal', timeUnit: 'month' },
+      y: { type: 'quantitative', aggregate: 'mean' },
+      color: { type: 'nominal' }
+    }
+  },
+  {
+    name: 'Histogram',
+    icon: '📊',
+    markType: 'bar',
+    description: 'Show distribution of values',
+    encodings: {
+      x: { type: 'quantitative', bin: { maxbins: 20 } },
       y: { type: 'quantitative', aggregate: 'count' }
     }
   }

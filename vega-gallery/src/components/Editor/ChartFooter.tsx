@@ -4,6 +4,9 @@ import { TablePagination } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { TopLevelSpec } from 'vega-lite';
+import { createDataSample } from '../../utils/dataUtils';
+import InfoIcon from '@mui/icons-material/Info';
+import TuneIcon from '@mui/icons-material/Tune';
 
 const FooterContainer = styled.div`
   margin-top: 20px;
@@ -158,50 +161,21 @@ const EncodingSection = styled.div`
   }
 `;
 
-const EncodingGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-`;
-
-const EncodingControl = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const EncodingLabel = styled.div`
-  font-weight: 500;
-  color: #495057;
-`;
-
-const EncodingButtons = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-`;
-
-const ActionButton = styled.button`
-  display: flex;
+const SamplingIndicator = styled.div`
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: white;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  color: #495057;
-  transition: all 0.2s;
-
-  &:hover {
-    background: #f8f9fa;
-    border-color: ${props => props.theme.colors.primary};
-  }
-
-  &.recommend {
-    background: ${props => props.theme.colors.primary};
-    color: white;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 4px 8px;
+  background: #fffce8;
+  border: 1px solid #ffe58f;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #755c0d;
+  
+  svg {
+    font-size: 14px;
+    color: #f5a623;
   }
 `;
 
@@ -215,6 +189,8 @@ const DataSummary = styled.div`
 const SummaryText = styled.div`
   font-size: 0.9rem;
   color: ${props => props.theme.text.secondary};
+  display: flex;
+  align-items: center;
 `;
 
 const ViewDataButton = styled.button`
@@ -229,70 +205,6 @@ const ViewDataButton = styled.button`
   &:hover {
     border-color: ${props => props.theme.colors.primary};
   }
-`;
-
-const DataTableContainer = styled.div`
-  max-width: 100%;
-  overflow-x: auto;
-  margin: 0;
-  padding: 16px;
-  background: white;
-  border-top: 1px solid #eee;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-`;
-
-const DataTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  
-  th, td {
-    padding: 8px 12px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-  }
-  
-  th {
-    background: #f8f9fa;
-    font-weight: 500;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-  }
-  
-  tbody tr:hover {
-    background: #f8f9fa;
-  }
-`;
-
-const ColumnStats = styled.div`
-  padding: 12px;
-  background: #f8f9fa;
-  border-top: 1px solid #eee;
-`;
-
-const ColumnStat = styled.div`
-  margin-bottom: 12px;
-`;
-
-const ColumnName = styled.div`
-  font-weight: 500;
-  color: #495057;
-`;
-
-const StatsList = styled.ul`
-  list-style: none;
-  padding-left: 0;
-`;
-
-const StatItem = styled.li`
-  margin-bottom: 4px;
-`;
-
-const ColumnType = styled.span`
-  font-weight: 500;
-  color: #495057;
 `;
 
 const SamplingContainer = styled.div`
@@ -317,31 +229,6 @@ const SampleOption = styled.span<{ $active: boolean }>`
   }
 `;
 
-const Pagination = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-top: 16px;
-  gap: 8px;
-`;
-
-const PageButton = styled.button`
-  padding: 4px 8px;
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  background: white;
-  cursor: pointer;
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  &:hover:not(:disabled) {
-    border-color: ${props => props.theme.colors.primary};
-  }
-`;
-
 interface ChartFooterProps {
   data?: any[] | null;
   spec?: TopLevelSpec | null;
@@ -350,129 +237,198 @@ interface ChartFooterProps {
 }
 
 export const ChartFooter = ({ data, spec, sampleSize, onSampleSizeChange }: ChartFooterProps) => {
-  // Add debug log to see what we're getting
-  console.log('ChartFooter data:', data);
-  console.log('ChartFooter spec:', spec);
-
-  const [showDataTable, setShowDataTable] = useState(true);
+  const [isOpen, setIsOpen] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  // Add state for visible columns
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
+  const [tableData, setTableData] = useState<any[]>([]);
+  const [originalDataLength, setOriginalDataLength] = useState(0);
+  const [isDataSampled, setIsDataSampled] = useState(false);
+  const [showSamplingOptions, setShowSamplingOptions] = useState(false);
 
-  // Determine the data to show
-  const rawData = data || (spec?.data && 'values' in spec.data ? spec.data.values : []) || [];
-  const isArray = Array.isArray(rawData);
-  
-  // Create a safe array of objects for display
-  const safeData = isArray ? rawData : [];
-  
-  // Determine all possible columns
-  const allColumns = safeData.length > 0 
-    ? Object.keys(safeData[0] || {})
-    : [];
-  
-  // Initialize visible columns if not already set
+  // Process data for display
   useEffect(() => {
-    if (allColumns.length > 0 && visibleColumns.size === 0) {
-      setVisibleColumns(new Set(allColumns));
+    console.log('ChartFooter data:', data);
+    console.log('ChartFooter spec:', spec);
+    
+    // Get the data from props or from spec
+    let rawData: any[] = [];
+    
+    if (Array.isArray(data)) {
+      // Use data directly if it's an array
+      rawData = data;
+    } else if (spec?.data) {
+      // Safely extract data from spec with type checking
+      const specData = spec.data;
+      if ('values' in specData && Array.isArray(specData.values)) {
+        rawData = specData.values;
+      }
     }
-  }, [allColumns, visibleColumns]);
-  
-  // Get the columns to display
-  const columns = Array.from(visibleColumns).filter(col => allColumns.includes(col));
-  
-  // Apply sampling to the data
-  const sampledData = safeData.slice(0, Math.min(sampleSize, safeData.length));
-  
-  // Apply pagination
-  const paginatedData = sampledData.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+    
+    setOriginalDataLength(rawData.length);
+    
+    // Apply sampling if dataset is large
+    if (rawData.length > 100) {
+      const sampledData = createDataSample(rawData, sampleSize);
+      setTableData(sampledData);
+      setIsDataSampled(true);
+    } else {
+      setTableData(rawData);
+      setIsDataSampled(false);
+    }
+  }, [data, spec, sampleSize]);
+
+  // Get columns from the first row of data
+  const columns = useMemo(() => {
+    if (!tableData.length) return [];
+    return Object.keys(tableData[0] || {});
+  }, [tableData]);
+
+  // Get the data for the current page
+  const paginatedData = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    return tableData.slice(startIndex, startIndex + rowsPerPage);
+  }, [tableData, page, rowsPerPage]);
+
+  const handleChangePage = (
+    event: React.MouseEvent<HTMLButtonElement> | null,
+    newPage: number,
+  ) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Handle applying sample size change
+  const handleSampleSizeChange = (newSize: number, event?: React.MouseEvent) => {
+    // Stop event propagation to prevent interference with parent components
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    console.log(`Setting sample size to ${newSize}`);
+    onSampleSizeChange(newSize);
+    setShowSamplingOptions(false);
+  };
+
+  // Toggle sampling options visibility
+  const toggleSamplingOptions = (event?: React.MouseEvent) => {
+    // Stop event propagation to prevent interference with parent components
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    setShowSamplingOptions(!showSamplingOptions);
+  };
 
   return (
     <FooterContainer>
       <DataSummary>
         <SummaryText>
-          {(() => {
-            // Calculate the total row count safely
-            let dataLength = 0;
-            if (Array.isArray(data)) {
-              dataLength = data.length;
-            } else if (spec?.data && 'values' in spec.data) {
-              const values = spec.data.values;
-              dataLength = Array.isArray(values) ? values.length : 0;
-            }
-            return dataLength.toLocaleString();
-          })()} total rows 
-          (showing {sampledData.length} samples) × {columns.length} columns
+          {originalDataLength > 0 ? (
+            <>
+              {originalDataLength} total rows{isDataSampled && ` (showing ${tableData.length} samples)`} × {columns.length} columns
+              {isDataSampled && (
+                <SamplingIndicator title={`Table shows a sample of ${tableData.length} out of ${originalDataLength} rows for performance`}>
+                  <InfoIcon fontSize="small" />
+                  Sampled Data
+                </SamplingIndicator>
+              )}
+            </>
+          ) : (
+            'No data available'
+          )}
         </SummaryText>
-        <ViewDataButton onClick={() => setShowDataTable(!showDataTable)}>
-          {showDataTable ? 'Hide Data' : 'View Data'}
-        </ViewDataButton>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {originalDataLength > 100 && (
+            <ViewDataButton 
+              onClick={(event) => toggleSamplingOptions(event)} 
+              title="Adjust sampling options"
+              style={{ marginRight: '8px' }}
+            >
+              <TuneIcon fontSize="small" style={{ marginRight: '4px' }} />
+              Sampling
+            </ViewDataButton>
+          )}
+          <ViewDataButton onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? (
+              <>
+                <VisibilityOffIcon fontSize="small" style={{ marginRight: '4px' }} />
+                Hide Data
+              </>
+            ) : (
+              <>
+                <VisibilityIcon fontSize="small" style={{ marginRight: '4px' }} />
+                View Data
+              </>
+            )}
+          </ViewDataButton>
+        </div>
       </DataSummary>
 
-      {sampledData.length > 0 && showDataTable && (
-        <>
-          <SamplingContainer>
-            {[1, 10, 25, 50, 75, 100].map(size => (
-              <SampleOption
-                key={size}
-                $active={sampleSize === size}
-                onClick={() => onSampleSizeChange(size)}
-                role="button"
-                tabIndex={0}
-              >
-                {size} rows
-              </SampleOption>
-            ))}
-          </SamplingContainer>
-          
-          <DataTableContainer>
-            <DataTable>
-              <thead>
-                <tr>
+      {showSamplingOptions && originalDataLength > 100 && (
+        <SamplingContainer>
+          <span>Sample size:</span>
+          {[100, 250, 500, 1000, 2000, 5000].map(size => (
+            <SampleOption
+              key={size}
+              $active={sampleSize === size}
+              onClick={(event) => handleSampleSizeChange(size, event)}
+              role="button"
+              tabIndex={0}
+            >
+              {size} rows
+            </SampleOption>
+          ))}
+          <SampleOption
+            $active={sampleSize === originalDataLength}
+            onClick={(event) => handleSampleSizeChange(originalDataLength, event)}
+            role="button"
+            tabIndex={0}
+          >
+            All ({originalDataLength})
+          </SampleOption>
+        </SamplingContainer>
+      )}
+
+      <TableContainer $isOpen={isOpen}>
+        <TableScroller>
+          <Table>
+            <thead>
+              <tr>
+                {columns.map(column => (
+                  <th key={column}>{column}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedData.map((row, i) => (
+                <tr key={i}>
                   {columns.map(column => (
-                    <th key={column}>{column}</th>
+                    <td key={column}>{String(row[column])}</td>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {paginatedData.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    {columns.map(column => (
-                      <td key={column}>
-                        {typeof row[column] === 'object' 
-                          ? JSON.stringify(row[column]) 
-                          : String(row[column])}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </DataTable>
-            
-            <Pagination>
-              <PageButton
-                onClick={() => setPage(prev => Math.max(0, prev - 1))}
-                disabled={page === 0}
-              >
-                Previous
-              </PageButton>
-              <span>
-                Page {page + 1} of {Math.ceil(sampledData.length / rowsPerPage)}
-              </span>
-              <PageButton
-                onClick={() => setPage(prev => Math.min(Math.ceil(sampledData.length / rowsPerPage) - 1, prev + 1))}
-                disabled={page >= Math.ceil(sampledData.length / rowsPerPage) - 1}
-              >
-                Next
-              </PageButton>
-            </Pagination>
-          </DataTableContainer>
-        </>
-      )}
+              ))}
+            </tbody>
+          </Table>
+        </TableScroller>
+
+        <TablePagination
+          component="div"
+          count={tableData.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+        />
+      </TableContainer>
     </FooterContainer>
   );
 }; 

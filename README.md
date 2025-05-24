@@ -26,6 +26,8 @@ A React-based visualization gallery and editor built with Vega-Lite. Create, cus
 - Sample dataset system with pre-loaded examples
 - Responsive layout with customizable width settings
 - Transformed dataset indicators
+- Intelligent data sampling for large datasets
+- Performance optimization for charts with massive data points
 
 ## Getting Started
 
@@ -155,6 +157,50 @@ npm run build
 - **Auto Data Type Detection**: Intelligently determines column data types
 - **Drag-and-Drop Interface**: Simple upload with drag-and-drop capabilities
 
+### 🚀 Performance Optimization for Large Datasets
+- **Intelligent Data Sampling**: Automatically samples large datasets for chart rendering while preserving statistical properties
+- **Chart-Type-Aware Sampling**: Different sampling limits for different chart types based on their rendering complexity
+- **Progressive Rendering**: Loads data in chunks to prevent UI freezing
+- **Visual Indicators**: Clear indicators when charts are using sampled data
+- **Customizable Sample Sizes**: Default limits can be adjusted based on device performance
+- **Original Data Preservation**: Original data is preserved for export and analysis
+
+## 📊 Data Sampling Implementation
+
+To improve performance with large datasets, Vega Gallery automatically applies intelligent sampling:
+
+### How Sampling Works
+- Different chart types have different sampling thresholds (e.g., scatter plots sample at 5,000 points, line charts at 2,500 points)
+- The sampling algorithm preserves data distribution characteristics and outliers
+- Visual indicators appear whenever sampling is applied, showing both the sample size and original data size
+- Sampling is applied consistently across all chart views: Gallery, Editor, and Preview
+
+### Sampling Configuration
+You can configure sampling thresholds in `utils/chartEnhancements.ts`:
+
+```typescript
+const SAMPLING_THRESHOLDS: Record<MarkType, number> = {
+  bar: 2000,
+  line: 2500,
+  area: 2000,
+  point: 5000,
+  circle: 5000,
+  // Add more chart types as needed
+  // Use a reasonable default for unlisted types
+  _default: 5000
+};
+```
+
+### When Sampling is Applied
+- During chart rendering via `renderVegaLite` function
+- When displaying data tables for large datasets
+- When exporting visualizations (original data is preserved, but the visual is based on sampled data)
+
+### Sampling Indicators
+- Chart views show a yellow badge in the top-right when sampling is active
+- Data tables show the sample size and original row count
+- Hover tooltips provide additional details about the sampling
+
 ### 📚 Story Builder
 - Dashboard composition
 - Narrative flow design
@@ -204,6 +250,8 @@ npm run dev
 - Smoother drag and resize interactions with useGesture
 - Improved spacing and margins across the application
 - Data tables open by default with better formatting
+- Adaptive data sampling for large datasets in charts
+- Performance optimizations for chart rendering
 
 ### 🔄 In Progress
 - Enhanced data transformation tools

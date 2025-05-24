@@ -1,29 +1,15 @@
 import styled from 'styled-components';
 
-export const ChartWrapper = styled.div`
-  width: 100%;
-  height: 400px;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  overflow: hidden;
-  
-  .vega-embed {
-    width: 100%;
-    height: 100%;
-    
-    .chart-wrapper {
-      width: 100% !important;
-      height: 100% !important;
-    }
-  }
-`;
-
 export const ChartContainer = styled.div`
-  background: white;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid ${props => props.theme.colors.border};
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+  background: white;
   
   &.fullscreen {
     position: fixed;
@@ -34,98 +20,100 @@ export const ChartContainer = styled.div`
     z-index: 1000;
     border-radius: 0;
     border: none;
-    display: flex;
-    flex-direction: column;
-    
-    ${ChartWrapper} {
-      flex: 1;
-    }
+    margin-bottom: 0;
+  }
+`;
+
+export const ChartWrapper = styled.div`
+  flex: 1;
+  min-height: 300px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .vega-embed {
+    width: 100%;
+    height: 100%;
   }
 `;
 
 export const ChartControls = styled.div`
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid #eee;
+  background: #f9f9f9;
   
   .control-group {
     display: flex;
+    align-items: center;
     gap: 8px;
   }
   
   button {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
+    background: white;
     border: 1px solid #ddd;
     border-radius: 4px;
-    background: white;
-    color: #333;
-    font-size: 14px;
+    padding: 4px 8px;
+    font-size: 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
     
     &:hover {
-      background: #f0f0f0;
-      border-color: #999;
-      transform: translateY(-1px);
-    }
-    
-    &:active {
-      transform: translateY(0px);
+      background: #f5f5f5;
     }
   }
   
   .dropdown {
     position: relative;
     
-    .dropdown-toggle {
-      background: white;
-    }
-    
     .dropdown-menu {
       position: absolute;
       top: 100%;
       right: 0;
-      margin-top: 4px;
       background: white;
-      border-radius: 4px;
       border: 1px solid #ddd;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      min-width: 160px;
-      z-index: 10;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       display: none;
-      overflow: hidden;
+      flex-direction: column;
+      width: 120px;
+      z-index: 10;
       
       button {
-        width: 100%;
-        text-align: left;
-        padding: 8px 12px;
         border: none;
         border-radius: 0;
-        border-bottom: 1px solid #f0f0f0;
+        text-align: left;
+        padding: 8px 12px;
         
-        &:last-child {
-          border-bottom: none;
+        &:hover {
+          background: #f5f5f5;
         }
       }
     }
     
     &:hover .dropdown-menu {
-      display: block;
+      display: flex;
     }
   }
   
-  @media (max-width: 768px) {
-    flex-direction: column;
+  .data-info {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #666;
+    background: #fffce8;
+    border: 1px solid #ffe58f;
+    border-radius: 4px;
+    padding: 4px 8px;
     
-    .control-group {
-      justify-content: center;
+    span[role="img"] {
+      font-size: 14px;
     }
   }
 `; 

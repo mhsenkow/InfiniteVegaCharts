@@ -8,6 +8,12 @@
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
   background-color: #f5f5f5;
+
+  /* Custom properties for sampling indicator */
+  --sampling-indicator-bg: #fffce8;
+  --sampling-indicator-border: #ffe58f;
+  --sampling-indicator-text: #755c0d;
+  --sampling-indicator-icon: #f5a623;
 }
 
 body {
@@ -62,6 +68,36 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* Global data sampling indicator styles */
+.sampling-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--sampling-indicator-bg);
+  border: 1px solid var(--sampling-indicator-border);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--sampling-indicator-text);
+  z-index: 100;
+}
+
+.sampling-indicator svg {
+  font-size: 16px;
+  color: var(--sampling-indicator-icon);
+}
+
+.chart-sampling-notice {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.inline-sampling-notice {
+  display: inline-flex;
+  margin-left: 8px;
 }
 
 @media (prefers-color-scheme: light) {

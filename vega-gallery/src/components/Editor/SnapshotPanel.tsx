@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { storeSnapshot, getAllSnapshots, deleteSnapshot, Snapshot } from '../../utils/indexedDB';
 import { createSnapshot } from '../../utils/chartRenderer';
+import { DatasetMetadata } from '../../types/dataset';
 
 const PanelContainer = styled.div`
   padding: 16px;
@@ -129,13 +130,15 @@ interface SnapshotPanelProps {
   currentSpec: any;
   vegaView: any;
   onLoadSnapshot: (spec: any) => void;
+  currentDataset?: DatasetMetadata;
 }
 
 export const SnapshotPanel = ({ 
   chartId, 
   currentSpec, 
   vegaView, 
-  onLoadSnapshot 
+  onLoadSnapshot,
+  currentDataset
 }: SnapshotPanelProps) => {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -206,6 +209,25 @@ export const SnapshotPanel = ({
         createdAt: new Date().toISOString(),
         thumbnail
       };
+      
+      // Add dataset information if available
+      if (currentDataset) {
+        snapshot.datasetId = currentDataset.id;
+        snapshot.datasetFingerprint = currentDataset.fingerprint;
+        
+        // Store essential dataset metadata for historical context
+        snapshot.datasetMetadata = {
+          id: currentDataset.id,
+          name: currentDataset.name,
+          description: currentDataset.description,
+          source: currentDataset.source,
+          origin: currentDataset.origin,
+          tags: currentDataset.tags,
+          createdAt: currentDataset.createdAt,
+          rowCount: currentDataset.rowCount,
+          columnCount: currentDataset.columnCount
+        };
+      }
       
       // Store in database
       await storeSnapshot(snapshot);
